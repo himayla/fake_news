@@ -1,4 +1,5 @@
 #!/bin/bash
+<<<<<<< HEAD
 #SBATCH --job-name=Preprocessing
 #SBATCH --output=preprocessing.out
 #SBATCH --time=24:00:00
@@ -25,3 +26,7 @@ end=$(date + "%T")
 echo "Start time: $end"
 
 deactivate
+=======
+
+python code/train.py
+>>>>>>> d92ce811516b2f596f7267dac154d827c9a1856c
