@@ -1,9 +1,6 @@
 data/
 .DS_Store
 am/
-<<<<<<< HEAD
 __pycache__/
 env/
-=======
-__pycache__/
->>>>>>> d92ce811516b2f596f7267dac154d827c9a1856c
+results/

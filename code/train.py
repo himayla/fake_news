@@ -11,16 +11,19 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-import loader, cleaner
+import loader
 
 SEED = 42
 
-tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
-device = torch.device("cuda")
+tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased") # Use pretrained model vocab
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print(f'Using device:{device}\n')
 
 id2label = {0: "FAKE", 1: "REAL"}
 label2id = {"FAKE": 0, "REAL": 1}
 
+# Model in library with sequence classification head, assigning a class to a statement.
 model = AutoModelForSequenceClassification.from_pretrained("bert-base-uncased", 
                                                            num_labels=2, 
                                                            id2label=id2label, 
@@ -29,10 +32,10 @@ model = AutoModelForSequenceClassification.from_pretrained("bert-base-uncased",
 def preprocess_function(examples):
     return tokenizer(examples["text"], truncation=True)
 
-# def compute_metrics(eval_pred):
-#     predictions, labels = eval_pred
-#     predictions = np.argmax(predictions, axis=1)
-#     return accuracy.compute(predictions=predictions, references=labels)
+def compute_metrics(eval_pred):
+    predictions, labels = eval_pred
+    predictions = np.argmax(predictions, axis=1)
+    return accuracy.compute(predictions=predictions, references=labels)
 
 
 if __name__ == "__main__":
@@ -44,43 +47,37 @@ if __name__ == "__main__":
 
     print("PREPROCESS DATA")
 
-    liar = liar.apply(lambda x: cleaner.preprocess(x["text"]), axis=1)
-    liar.to_csv("clean_liar.csv")
+    fake_real = Dataset.from_pandas(fake_real).train_test_split(test_size=0.3, seed=42).class_encode_column("label")
+    tokenized = fake_real.map(preprocess_function, batched=True)
+    print(tokenized["train"][0])
+    data_collator = DataCollatorWithPadding(tokenizer=tokenizer, max_length=300)
 
-    # kaggle = kaggle.apply(lambda x: cleaner.preprocess(x["text"]), axis=1)
-    # kaggle.to_csv("clean_kaggle.csv")
-    # fake_real = Dataset.from_pandas(fake_real).train_test_split(test_size=0.3, seed=42).class_encode_column("label")
-    # tokenized = fake_real.map(preprocess_function, batched=True)
-    # print(tokenized["train"][0])
+    accuracy = evaluate.load("accuracy")
 
+    # Documentation: https://huggingface.co/transformers/v3.0.2/main_classes/trainer.html
 
+    training_args = TrainingArguments(
+        output_dir="results/bert-base-uncased/fake_real",
+        per_device_train_batch_size=32,
+        evaluation_strategy="epoch",
+        learning_rate=4e-5, # Initial learning rate for Adam
+        weight_decay=0.01, ##?
+        adam_epsilon=1e-8, #Default
+        num_train_epochs=10
+        )
 
-    # data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
-
-    # accuracy = evaluate.load("accuracy")
-
-    # training_args = TrainingArguments(
-    #     output_dir="bert",
-    #     evaluation_strategy="epoch",
-    #     learning_rate=2e-5,
-    #     per_device_train_batch_size=16,
-    #     per_device_eval_batch_size=4,
-    #     num_train_epochs=1,
-    #     weight_decay=0.01,
-    #     save_strategy="epoch",
-    #     load_best_model_at_end=True
-    #     )
-
-    # trainer = Trainer(
-    #     model=model,
-    #     args=training_args,
-    #     train_dataset=tokenized["train"],
-    #     eval_dataset=tokenized["test"],
-    #     tokenizer=tokenizer,
-    #     data_collator= data_collator,
-    #     compute_metrics=compute_metrics
-    #     )
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        data_collator= data_collator,
+        train_dataset=tokenized["train"],
+        eval_dataset=tokenized["test"],
+        compute_metrics=compute_metrics
+        # Default optimiizer is AdamW
+        )
     
-    # print("START TRAINING")
-    # trainer.train()
+    print("START TRAINING")
+    trainer.train()
+
+    trainer.save_model()
 
