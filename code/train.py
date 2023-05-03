@@ -11,7 +11,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-import loader
+import loader, cleaner
 
 SEED = 42
 
@@ -27,7 +27,7 @@ model = AutoModelForSequenceClassification.from_pretrained("bert-base-uncased",
                                                            label2id=label2id)
 
 def preprocess_function(examples):
-    return tokenizer(examples["statement"], truncation=True)
+    return tokenizer(examples["text"], truncation=True)
 
 # def compute_metrics(eval_pred):
 #     predictions, labels = eval_pred
@@ -38,18 +38,23 @@ def preprocess_function(examples):
 if __name__ == "__main__":
     print("LOAD DATA")
     
-    corpora = loader.load_data("data")
-    print(corpora)
+    fake_real, liar, kaggle = loader.load_data("data")
 
     print("------------------------------------")
 
+    print("PREPROCESS DATA")
+
+    liar = liar.apply(lambda x: cleaner.preprocess(x["text"]), axis=1)
+    liar.to_csv("clean_liar.csv")
+
+    # kaggle = kaggle.apply(lambda x: cleaner.preprocess(x["text"]), axis=1)
+    # kaggle.to_csv("clean_kaggle.csv")
+    # fake_real = Dataset.from_pandas(fake_real).train_test_split(test_size=0.3, seed=42).class_encode_column("label")
+    # tokenized = fake_real.map(preprocess_function, batched=True)
+    # print(tokenized["train"][0])
 
 
-    #print("PREPROCESS DATA")
 
-   # data = Dataset.from_pandas(df_liar).train_test_split(test_size=0.3, seed=42).class_encode_column("label")
-
-    # tokenized = data.map(preprocess_function, batched=True)
     # data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
     # accuracy = evaluate.load("accuracy")

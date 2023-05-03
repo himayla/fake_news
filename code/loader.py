@@ -39,6 +39,8 @@ def load_liar(path):
 
     liar = liar[["label", "statement"]]
 
+    liar = liar.rename(columns={"statement": "text"})
+    
     return liar
 
 def load_kaggle(path):

@@ -12,3 +12,4 @@ textblob==0.17.1
 torch==1.13.0
 tqdm==4.62.3
 transformers==4.26.1
+Unidecode

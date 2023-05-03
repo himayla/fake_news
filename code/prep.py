@@ -46,52 +46,52 @@ def preprocess(raw_text):
 
     return ' '.join(stemmed)
 
-if __name__ == "__main__":
-    print("Starting program")
-    # tqdm.pandas()
-    start_time = time.time()
-    # Load Fake and Real News dataset by Mcintire
-    fake_real = pd.read_csv("data/mcintire/fake_and_real_news_dataset.csv")
+# if __name__ == "__main__":
+    # print("Starting program")
+    # # tqdm.pandas()
+    # start_time = time.time()
+    # # Load Fake and Real News dataset by Mcintire
+    # fake_real = pd.read_csv("data/mcintire/fake_and_real_news_dataset.csv")
 
-    # # Load Liar dataset by Yang
-    labels = ["id", "label", "statement", "subject", "speaker", "job_title", "state_info", "party_affiliation", "barely_true_counts", "false_counts", "half_true_counts", "mostly_true_counts", "pants_on_fire_counts", "context"]
+    # # # Load Liar dataset by Yang
+    # labels = ["id", "label", "statement", "subject", "speaker", "job_title", "state_info", "party_affiliation", "barely_true_counts", "false_counts", "half_true_counts", "mostly_true_counts", "pants_on_fire_counts", "context"]
 
-    liar_train = pd.read_csv("data/liar/train.tsv", sep="\t", names=labels)
-    liar_valid = pd.read_csv("data/liar/valid.tsv", sep="\t", names=labels)
-    liar_test = pd.read_csv("data/liar/test.tsv", sep="\t", names=labels)
+    # liar_train = pd.read_csv("data/liar/train.tsv", sep="\t", names=labels)
+    # liar_valid = pd.read_csv("data/liar/valid.tsv", sep="\t", names=labels)
+    # liar_test = pd.read_csv("data/liar/test.tsv", sep="\t", names=labels)
 
-    liar = pd.concat([liar_train, liar_valid, liar_test])
+    # liar = pd.concat([liar_train, liar_valid, liar_test])
 
-    # tqdm.pandas(desc="Test")
+    # # tqdm.pandas(desc="Test")
 
-    # Load Fake and Real news from Kaggle
-    df_real = pd.read_csv("data/kaggle/True.csv")
-    df_real["label"] = "REAL"
+    # # Load Fake and Real news from Kaggle
+    # df_real = pd.read_csv("data/kaggle/True.csv")
+    # df_real["label"] = "REAL"
 
-    df_fake = pd.read_csv("data/kaggle/Fake.csv")
-    df_fake["label"] = "FAKE"
+    # df_fake = pd.read_csv("data/kaggle/Fake.csv")
+    # df_fake["label"] = "FAKE"
 
-    kaggle = pd.concat([df_real, df_fake], ignore_index=True)
+    # kaggle = pd.concat([df_real, df_fake], ignore_index=True)
 
-    # Convert labels
-    liar["label"] = liar["label"].map({
-        "true": "REAL",
-        "half-true": "REAL",
-        "mostly-true": "REAL",
-        "barely-true": "FAKE",
-        "pants-fire": "FAKE",
-        "false": "FAKE"
-    })
+    # # Convert labels
+    # liar["label"] = liar["label"].map({
+    #     "true": "REAL",
+    #     "half-true": "REAL",
+    #     "mostly-true": "REAL",
+    #     "barely-true": "FAKE",
+    #     "pants-fire": "FAKE",
+    #     "false": "FAKE"
+    # })
 
-    # Remove metadata from datasets
-    fake_real = fake_real.drop(columns=["idd", "title"])
-    liar = liar[["label", "statement"]]
-    kaggle = kaggle[["text", "label"]]
+    # # Remove metadata from datasets
+    # fake_real = fake_real.drop(columns=["idd", "title"])
+    # liar = liar[["label", "statement"]]
+    # kaggle = kaggle[["text", "label"]]
 
-    # Rename column to match the other datasets
-    liar = liar.rename(columns={"statement": "text"})
+    # # Rename column to match the other datasets
+    # liar = liar.rename(columns={"statement": "text"})
 
-    print("Preprocessing Fake and Real News")
+    # print("Preprocessing Fake and Real News")
     # fake_real = fake_real.loc.copy()
     fake_real.loc[:,"clean_text"] = fake_real.apply(lambda x: preprocess(x["text"]), axis=1)
 
