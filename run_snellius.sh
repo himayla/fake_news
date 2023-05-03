@@ -1,12 +1,13 @@
 #!/bin/bash
-#SBATCH --job-name=Preprocessing
-#SBATCH --output=preprocessing.out
-#SBATCH --time=24:00:00
-#SBATCH --ntasks=1
+#SBATCH --job-name=Training
+#SBATCH --output=Training.out
 #SBATCH --nodes=1
+#SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
-#SBATCH -e errfile
 #SBATCH --partition=thin
+#SBATCH --time=24:00:00
+#SBATCH -e errfile
+
 
 start=$(date +"%s")
 echo Start time: `date +"%T"`
