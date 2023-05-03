@@ -42,19 +42,20 @@ if __name__ == "__main__":
     print("LOAD DATA")
     
     fake_real, liar, kaggle = loader.load_data("data")
+    print(f"Number of examples: {len(fake_real)}")
 
     print("------------------------------------")
 
     print("PREPROCESS DATA")
 
     fake_real = Dataset.from_pandas(fake_real).train_test_split(test_size=0.3, seed=42).class_encode_column("label")
+
     tokenized = fake_real.map(preprocess_function, batched=True)
-    print(tokenized["train"][0])
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer, max_length=300)
 
     accuracy = evaluate.load("accuracy")
 
-    # Documentation: https://huggingface.co/transformers/v3.0.2/main_classes/trainer.html
+    # # Documentation: https://huggingface.co/transformers/v3.0.2/main_classes/trainer.html
 
     training_args = TrainingArguments(
         output_dir="results/bert-base-uncased/fake_real",

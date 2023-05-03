@@ -3,15 +3,21 @@ import os.path
 import cleaner
 
 def load_data(dir):
-    if os.path.exists(f"{dir}/clean"):
+    if (len(os.listdir(f"{dir}/clean")) == 0):
+        fake_real = load_fake(f"{dir}/mcintire/fake_real.csv")
+        fake_real.to_csv(f"{dir}/clean/fake_real.csv")
+
+        liar = load_liar(f"{dir}/liar")
+        liar.to_csv(f"{dir}/clean/liar.csv")
+
+        kaggle = load_kaggle(f"{dir}/kaggle")
+        kaggle.to_csv(f"{dir}/clean/kaggle.csv")
+       
+    else:
         fake_real = pd.read_csv(f"{dir}/clean/fake_real.csv")
         liar = pd.read_csv(f"{dir}/clean/liar.csv")
         kaggle = pd.read_csv(f"{dir}/clean/kaggle.csv")
-
-    else:
-        fake_real = load_fake(f"{dir}/mcintire/fake_real.csv")
-        liar = load_liar(f"{dir}/liar")
-        kaggle = load_kaggle(f"{dir}/kaggle")
+    
 
     return fake_real, liar, kaggle
 
@@ -21,7 +27,7 @@ def load_fake(path):
     # Remove metadata from datasets
     fake_real = fake_real.drop(columns=["idd", "title"])
 
-    fake_real = fake_real.apply(lambda x: cleaner.preprocess(x["text"]), axis=1)    
+    fake_real.apply(lambda x: cleaner.preprocess(x["text"]), axis=1) 
 
     return fake_real
 
@@ -49,7 +55,8 @@ def load_liar(path):
 
     liar = liar.rename(columns={"statement": "text"})
 
-    liar = liar.apply(lambda x: cleaner.preprocess(x["text"]), axis=1)    
+    liar.apply(lambda x: cleaner.preprocess(x["text"]), axis=1)
+
     return liar
 
 def load_kaggle(path):
@@ -64,6 +71,6 @@ def load_kaggle(path):
 
     kaggle = kaggle.drop_duplicates(subset=["text"])
 
-    kaggle = kaggle.apply(lambda x: cleaner.preprocess(x["text"]), axis=1)    
-
+    kaggle.apply(lambda x: cleaner.preprocess(x["text"]), axis=1)
+  
     return kaggle

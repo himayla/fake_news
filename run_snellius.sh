@@ -12,11 +12,10 @@
 start=$(date +"%s")
 echo Start time: `date +"%T"`
 
-# Activate
-source "env/bin/activate"
 module load 2022
 module load Python/3.10.4-GCCcore-11.3.0
-python -m pip install -r requirements.txt
+source "env/bin/activate"
+#python -m pip install -r requirements.txt
 
 # Run your code
 srun echo "Start process"
