@@ -4,8 +4,8 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.stem.snowball import SnowballStemmer
 from nltk.tokenize import word_tokenize
-nltk.download('stopwords')
-nltk.download("punkt")
+nltk.download('stopwords',quiet=True)
+nltk.download("punkt", quiet=True)
 from textblob import TextBlob
 import matplotlib.pyplot as plt
 from tqdm import tqdm

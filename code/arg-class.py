@@ -1,86 +1,97 @@
 import argparse
 import pandas as pd
-import string
-# import nltk
-from nltk.corpus import stopwords
-# from nltk.stem.snowball import SnowballStemmer
-from nltk.tokenize import word_tokenize
-# nltk.download('stopwords')
-# nltk.download("punkt")
-from textblob import TextBlob
 import subprocess
+import loader
+import os
+import re
+import string
+import json
+import contractions
 
-tools = ["MARGOT", "ARGMINING-17"]
-path = "AM/MARGOT/run_margot.sh" # Default
 
-# Load NLTK stopwords and Snowball stemmer
-stop_words = set(stopwords.words('english'))
-#stemmer = SnowballStemmer(language="english")
 
-counter = 0 
+def df_to_doc(clean_text):
+    # TODO: Fix cleaning issues
+    global counter
+    with open(f"temp/news/{counter}.txt", "a+") as text_file:
+        expanded_text = []
+        for word in clean_text.split():
+            expanded_text.append(contractions.fix(word))  
+        clean_text = ' '.join(expanded_text)
+        clean_text = re.sub(r'[``“”’,"\'-]', "", clean_text) # Remove weird quotation things
+        clean_text = re.sub(r'\n', " ", clean_text) # Remove weird quotation things
+        text_file.write(clean_text)
+    counter += 1
 
-def parse_commands():
-    parser = argparse.ArgumentParser(prog='AM')
+def extract_argumentation():
+    tool = "AM/MARGOT/run_margot.sh" # Default
+    for idx, file in enumerate(sorted(os.listdir("temp/news"))):
+        input = f"../../temp/news/{file}"
+        output = f"../../temp/arguments/{idx}"
+        subprocess.call([tool, input, output])
 
-    parser.add_argument("--tool", help="Tool to use")
+    res = parse_output()
 
-    try:
-        args = parser.parse_args()
-        if args.tool == tools[0]:
-            pass
-        else:
-            path = ""
-    except:
-        pass
+    res = {k: [v] for k, v in res.items()}
 
-def preprocess(raw_text):
-    """ Perform preprocessing"""
-    # Remove urls and IPs
-    txt = raw_text.replace(r"http://\S+|https://\S++", "").replace(r"\.[0]*", "")
+    return pd.DataFrame.from_dict(res, orient='index')
 
-    word_tokens = word_tokenize(txt)
 
-    # Remove stop words 
-    sent = [w for w in word_tokens if not w.lower() in stop_words]
 
-    # Replace different colons to regular ones
-    sent = [w.replace("”", "\"").replace("“", "\"").replace("’", "\"").replace("...", ".") for w in sent]
+def parse_output():
+    argument_structures = {}
+    for dir in sorted(os.listdir("temp/arguments")):
+        with open(f"temp/arguments/{dir}/OUTPUT.json") as json_file:
+            doc = json.loads(json_file.read())
+            args = []
 
-    # Remove punctuation and split every text by white space
-    sent = ' '.join([w for w in sent if w not in string.punctuation])
+            for sent in doc["document"]:
 
-    # Correct spelling of words
-    doc = TextBlob(sent)
-    corrected = doc.correct()
+                if sent.get("claim"):
+                    args.append((sent["claim"], "claim"))
 
-    # Remove suffices by stemming
-    #stemmed = [stemmer.stem(w) for w in corrected.split()]
+                elif sent.get("evidence"):
+                    args.append((sent["evidence"], "evidence"))
+        
 
-    return ''.join(corrected)
+        argument_structures[dir] = args
+    
+    return argument_structures
 
-def MARGOT(clean_txt):
-    with open(f"AM/MARGOT/tmp/temp_{counter}.txt", 'w') as f:
-        #txt = clean_txt.to_string(header=False, index=False)
-        f.writelines(clean_txt)
 
-    subprocess.call([path, f"tmp/temp_{counter}.txt", "../../data/MARGOT"])
 
 if __name__ == "__main__":
-    parse_commands()
+    counter = 0 
 
-    fake_real = pd.read_csv("data/clean/fake_real.csv")[:1]
+    # TODO: Implement command-line arguments so that different AM-tools can be used
+    # parse_commands()
 
-    example = fake_real["text"][0]
+    fake_real, liar, kaggle = loader.load_data("data")
+    # print(f"Data:\nFake Real: {len(fake_real)}\nLiar: {len(liar)}\nKaggle: {len(kaggle)}")
 
-    clean_example = preprocess(example)
+    fake_real_sample = fake_real[:2] #Sample
 
-    fake_real["clean"] = fake_real.apply(lambda x: preprocess(x["text"]), axis=1)
+    # # TODO: Write clean articles out to documents
+    fake_real_sample.apply(lambda x: df_to_doc(x["text"]), axis=1)
 
+    # # # TODO: Run Margot over the documents
+    result = extract_argumentation()
 
-    #print(example)
+    #TODO: Write result data/argumentation_structure
+    result.to_csv("am/output/fake_real.csv")
 
-    rc = fake_real.apply(lambda x: MARGOT(x["clean"]), axis=1)
+    # TODO: Train on the result
 
-    #print(rc)
+# def parse_commands():
+#     parser = argparse.ArgumentParser(prog='AM')
 
-    # pd.write_json(rc)
+#     parser.add_argument("--tool", help="Tool to use")
+
+#     try:
+#         args = parser.parse_args()
+#         if args.tool == tools[0]:
+#             pass
+#         else:
+#             path = ""
+#     except:
+#         pass

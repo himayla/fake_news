@@ -12,7 +12,6 @@ def load_data(dir):
 
         kaggle = load_kaggle(f"{dir}/kaggle")
         kaggle.to_csv(f"{dir}/clean/kaggle.csv")
-       
     else:
         fake_real = pd.read_csv(f"{dir}/clean/fake_real.csv")
         liar = pd.read_csv(f"{dir}/clean/liar.csv")

@@ -9,7 +9,7 @@ python -m pip install -r requirements.txt
 
 # Run your code
 echo "Start process"
-python code/train.py
+python code/arg-class.py
 echo "End process"
 
 end=$(date +"%s")
