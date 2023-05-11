@@ -8,8 +8,6 @@ import string
 import json
 import contractions
 
-
-
 def df_to_doc(clean_text):
     # TODO: Fix cleaning issues
     global counter
@@ -58,27 +56,25 @@ def parse_output():
     
     return argument_structures
 
-
-
 if __name__ == "__main__":
     counter = 0 
 
     # TODO: Implement command-line arguments so that different AM-tools can be used
     # parse_commands()
 
-    fake_real, liar, kaggle = loader.load_data("data")
-    # print(f"Data:\nFake Real: {len(fake_real)}\nLiar: {len(liar)}\nKaggle: {len(kaggle)}")
+    data = loader.load_data("data")
+    
+    for name, df in data.items():
+        print(f"Data: {name}, {len(df)}")
+    
+        # Convert news values out to documents
+        df.apply(lambda x: df_to_doc(x["text"]), axis=1)
 
-    fake_real_sample = fake_real[:2] #Sample
+        # Run Margot over the documents
+        result = extract_argumentation()
 
-    # # TODO: Write clean articles out to documents
-    fake_real_sample.apply(lambda x: df_to_doc(x["text"]), axis=1)
-
-    # # # TODO: Run Margot over the documents
-    result = extract_argumentation()
-
-    #TODO: Write result data/argumentation_structure
-    result.to_csv("am/output/fake_real.csv")
+        # Write result data/argumentation_structure
+        result.to_csv(f"am/output/{name}.csv")
 
     # TODO: Train on the result
 

@@ -18,7 +18,7 @@ def load_data(dir):
         kaggle = pd.read_csv(f"{dir}/clean/kaggle.csv")
     
 
-    return fake_real, liar, kaggle
+    return {"Fake_real": fake_real, "Liar": liar, "Kaggle": kaggle}
 
 def load_fake(path):
     # Load Fake and Real News dataset by Mcintire

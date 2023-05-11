@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import time
 from unidecode import unidecode
+import contractions
 
 # Load NLTK stopwords and Snowball stemmer
 stop_words = set(stopwords.words('english'))
@@ -39,6 +40,13 @@ def preprocess(raw_text):
     #txt = ' '.join([stemmer.stem(w) for w in txt])
 
     txt = " ".join(txt)
+
+    expanded_text = []
+    for word in clean_text.split():
+        expanded_text.append(contractions.fix(word))  
+    clean_text = ' '.join(expanded_text)
+    clean_text = re.sub(r'[``“”’,"\'-]', "", clean_text) # Remove weird quotation things
+    clean_text = re.sub(r'\n', " ", clean_text) # Remove weird quotation things
     txt = txt.replace("  ", " ")
 
     # # Correct spelling of words # DOESNT WORK CORRECTLY
