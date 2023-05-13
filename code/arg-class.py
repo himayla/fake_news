@@ -62,7 +62,7 @@ if __name__ == "__main__":
     # TODO: Implement command-line arguments so that different AM-tools can be used
     # parse_commands()
 
-    data = loader.load_data("data")
+    data = loader.load_data(arg=True)
     
     for name, df in data.items():
         print(f"Data: {name}, {len(df)}")

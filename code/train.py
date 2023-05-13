@@ -5,7 +5,6 @@ import pandas as pd
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer
 from datasets import Dataset
 from transformers import DataCollatorWithPadding
-
 import evaluate
 import numpy as np
 import torch
@@ -41,42 +40,43 @@ if __name__ == "__main__":
                                                             label2id=label2id)
 
     print("LOAD DATA")
-    data = loader.load_data("data")
-    
-    for name, df in data.items():
-        print(f"Number of examples: {len(df)}")
-        print("------------------------------------")
-        print("PREPROCESS DATA")
+    data = loader.load_data()
 
-        df = Dataset.from_pandas(df).train_test_split(test_size=0.3, seed=42).class_encode_column("label")
 
-        tokenized = df.map(preprocess_function, batched=True)
-        data_collator = DataCollatorWithPadding(tokenizer=tokenizer, max_length=300)
+    # for name, df in data.items():
+    #     print(f"Number of examples: {len(df)}")
+    #     print("------------------------------------")
+    #     print("PREPROCESS DATA")
 
-        accuracy = evaluate.load("accuracy")
+    #     df = Dataset.from_pandas(df).train_test_split(test_size=0.3, seed=42).class_encode_column("label")
 
-        # Documentation: https://huggingface.co/transformers/v3.0.2/main_classes/trainer.html
-        training_args = TrainingArguments(
-            output_dir=f"results/bert-base-uncased/{name}",
-            per_device_train_batch_size=32,
-            evaluation_strategy="epoch",
-            learning_rate=4e-5, # Initial learning rate for Adam
-            weight_decay=0.01, ##?
-            adam_epsilon=1e-8, #Default
-            num_train_epochs=10
-            )
+    #     tokenized = df.map(preprocess_function, batched=True)
+    #     data_collator = DataCollatorWithPadding(tokenizer=tokenizer, max_length=300)
 
-        trainer = Trainer(
-            model=model,
-            args=training_args,
-            data_collator= data_collator,
-            train_dataset=tokenized["train"],
-            eval_dataset=tokenized["test"],
-            compute_metrics=compute_metrics
-            # Default optimizer is AdamW
-            )
+    #     accuracy = evaluate.load("accuracy")
+
+    #     # Documentation: https://huggingface.co/transformers/v3.0.2/main_classes/trainer.html
+    #     training_args = TrainingArguments(
+    #         output_dir=f"results/bert-base-uncased/{name}",
+    #         per_device_train_batch_size=32,
+    #         evaluation_strategy="epoch",
+    #         learning_rate=4e-5, # Initial learning rate for Adam
+    #         weight_decay=0.01, ##?
+    #         adam_epsilon=1e-8, #Default
+    #         num_train_epochs=10
+    #         )
+
+    #     trainer = Trainer(
+    #         model=model,
+    #         args=training_args,
+    #         data_collator= data_collator,
+    #         train_dataset=tokenized["train"],
+    #         eval_dataset=tokenized["test"],
+    #         compute_metrics=compute_metrics
+    #         # Default optimizer is AdamW
+    #         )
         
-        print("START TRAINING")
-        trainer.train()
+    #     print("START TRAINING")
+    #     trainer.train()
 
-        trainer.save_model()
+    #     trainer.save_model()

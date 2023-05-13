@@ -1,32 +1,50 @@
 import pandas as pd
-import os.path
+import os
 import cleaner
 
-def load_data(dir):
-    if (len(os.listdir(f"{dir}/clean")) == 0):
-        fake_real = load_fake(f"{dir}/mcintire/fake_real.csv")
-        fake_real.to_csv(f"{dir}/clean/fake_real.csv")
-
-        liar = load_liar(f"{dir}/liar")
-        liar.to_csv(f"{dir}/clean/liar.csv")
-
-        kaggle = load_kaggle(f"{dir}/kaggle")
-        kaggle.to_csv(f"{dir}/clean/kaggle.csv")
-    else:
-        fake_real = pd.read_csv(f"{dir}/clean/fake_real.csv")
-        liar = pd.read_csv(f"{dir}/clean/liar.csv")
-        kaggle = pd.read_csv(f"{dir}/clean/kaggle.csv")
+def load_data(arg=False):
+    data = {}
+    for name in os.listdir("data/original"):
+        if arg:
+            if os.path.exists(f"data/clean/arg/{name}.csv"):
+                df = pd.read_csv(f"data/clean/arg/{name}.csv")
+            else:
+                if name == "fake_real":
+                    df = load_fake(f"data/original/{name}/{name}.csv")
+                elif name == "liar":
+                    df = load_liar(f"data/original/{name}")
+                elif name == "kaggle":
+                    df = load_kaggle(f"data/original/{name}")
     
+                df.loc[:, 'text'] = df.apply(lambda x: cleaner.prep_argumentation_based(x["text"]), axis=1) 
+                df.to_csv(f"data/clean/arg/{name}.csv")
+                df.to_excel(f"data/clean/arg/{name}.xlsx")
+        else:
+            if os.path.exists(f"data/clean/text/{name}.csv"):
+                df = pd.read_csv(f"data/clean/text/{name}.csv")
+            else:
+                if name == "fake_real":
+                    df = load_fake(f"data/original/{name}/{name}.csv")
+                elif name == "liar":
+                    df = load_liar(f"data/original/{name}")
+                elif name == "kaggle":
+                    df = load_kaggle(f"data/original/{name}")
+    
+                df.loc[:,"text"] = df.apply(lambda x: cleaner.prep_text_based(x["text"]), axis=1) 
+                df.to_csv(f"data/clean/text/{name}.csv")
+                df.to_excel(f"data/clean/text/{name}.xlsx")  
+          
+        data[name] =  df
 
-    return {"Fake_real": fake_real, "Liar": liar, "Kaggle": kaggle}
+    return data
 
 def load_fake(path):
     # Load Fake and Real News dataset by Mcintire
-    fake_real = pd.read_csv(path)
+    fake_real = pd.read_csv(path)[:10]
     # Remove metadata from datasets
     fake_real = fake_real.drop(columns=["idd", "title"])
 
-    fake_real.apply(lambda x: cleaner.preprocess(x["text"]), axis=1) 
+    fake_real.loc[:,"text"] = fake_real.apply(lambda x: cleaner.preprocess(x["text"]), axis=1) 
 
     return fake_real
 
@@ -34,11 +52,11 @@ def load_liar(path):
     # Load Liar dataset by Wang
     labels = ["id", "label", "statement", "subject", "speaker", "job_title", "state_info", "party_affiliation", "barely_true_counts", "false_counts", "half_true_counts", "mostly_true_counts", "pants_on_fire_counts", "context"]
 
-    liar_train = pd.read_csv(f"{path}/train.tsv", sep="\t", names=labels)
-    liar_valid = pd.read_csv(f"{path}/valid.tsv", sep="\t", names=labels)
-    liar_test = pd.read_csv(f"{path}/test.tsv", sep="\t", names=labels)
+    liar_train = pd.read_csv(f"{path}/train.tsv", sep="\t", names=labels)[:5]
+    liar_valid = pd.read_csv(f"{path}/valid.tsv", sep="\t", names=labels)[:5]
+    liar_test = pd.read_csv(f"{path}/test.tsv", sep="\t", names=labels)[:5]
 
-    liar = pd.concat([liar_train, liar_valid, liar_test])
+    liar = pd.concat([liar_train, liar_valid, liar_test]).reset_index(drop=True)
 
     # Convert labels
     liar["label"] = liar["label"].map({
@@ -54,15 +72,15 @@ def load_liar(path):
 
     liar = liar.rename(columns={"statement": "text"})
 
-    liar.apply(lambda x: cleaner.preprocess(x["text"]), axis=1)
+    liar.loc[:, 'text'] = liar.apply(lambda x: cleaner.preprocess(x["text"]), axis=1)
 
     return liar
 
 def load_kaggle(path):
-    df_real = pd.read_csv(f"{path}/True.csv")
+    df_real = pd.read_csv(f"{path}/True.csv")[:5]
     df_real["label"] = "REAL"
 
-    df_fake = pd.read_csv(f"{path}/Fake.csv")
+    df_fake = pd.read_csv(f"{path}/Fake.csv")[:5]
     df_fake["label"] = "FAKE"
 
     kaggle = pd.concat([df_real, df_fake], ignore_index=True)
@@ -70,6 +88,6 @@ def load_kaggle(path):
 
     kaggle = kaggle.drop_duplicates(subset=["text"])
 
-    kaggle.apply(lambda x: cleaner.preprocess(x["text"]), axis=1)
+    kaggle.loc[:, 'text'] = kaggle.apply(lambda x: cleaner.preprocess(x["text"]), axis=1)
   
     return kaggle

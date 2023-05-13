@@ -4,3 +4,4 @@ am/
 __pycache__/
 env/
 results/
+temp/
