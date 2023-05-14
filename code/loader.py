@@ -52,9 +52,9 @@ def load_liar(path):
     # Load Liar dataset by Wang
     labels = ["id", "label", "statement", "subject", "speaker", "job_title", "state_info", "party_affiliation", "barely_true_counts", "false_counts", "half_true_counts", "mostly_true_counts", "pants_on_fire_counts", "context"]
 
-    liar_train = pd.read_csv(f"{path}/train.tsv", sep="\t", names=labels)[:5]
-    liar_valid = pd.read_csv(f"{path}/valid.tsv", sep="\t", names=labels)[:5]
-    liar_test = pd.read_csv(f"{path}/test.tsv", sep="\t", names=labels)[:5]
+    liar_train = pd.read_csv(f"{path}/train.tsv", sep="\t", names=labels)
+    liar_valid = pd.read_csv(f"{path}/valid.tsv", sep="\t", names=labels)
+    liar_test = pd.read_csv(f"{path}/test.tsv", sep="\t", names=labels)
 
     liar = pd.concat([liar_train, liar_valid, liar_test]).reset_index(drop=True)
 
@@ -77,10 +77,10 @@ def load_liar(path):
     return liar
 
 def load_kaggle(path):
-    df_real = pd.read_csv(f"{path}/True.csv")[:5]
+    df_real = pd.read_csv(f"{path}/True.csv")
     df_real["label"] = "REAL"
 
-    df_fake = pd.read_csv(f"{path}/Fake.csv")[:5]
+    df_fake = pd.read_csv(f"{path}/Fake.csv")
     df_fake["label"] = "FAKE"
 
     kaggle = pd.concat([df_real, df_fake], ignore_index=True)
