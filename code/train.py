@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
         # Documentation: https://huggingface.co/transformers/v3.0.2/main_classes/trainer.html
         training_args = TrainingArguments(
-            output_dir=f"results/text/{model_name}/{name}",
+            output_dir=f"text/{model_name}/{name}",
             per_device_train_batch_size=32,
             evaluation_strategy="epoch",
             learning_rate=4e-5, # Initial learning rate for Adam
