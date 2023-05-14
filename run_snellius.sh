@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=Training
-#SBATCH --output=Training.out
+#SBATCH --job-name=Training_Kaggle
+#SBATCH --output=Training_Kaggle.out
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
 #SBATCH --partition=thin
-#SBATCH --time=24:00:00
-#SBATCH -e errfile
+#SBATCH --time=48:00:00
+#SBATCH -e terminal_Kaggle
 
 
 start=$(date +"%s")
