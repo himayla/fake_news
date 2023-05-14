@@ -14,7 +14,9 @@ import loader
 
 SEED = 42
 
-model_name = "bert-base-uncased"
+all_models = ["bert-base-uncased", "roberta-base", "DistilBERT"] #TODO: Elektra? #TODO: Elmo?
+
+model_name = "roberta-base"
 tokenizer = AutoTokenizer.from_pretrained(model_name) # Use pretrained model vocab
 
 def preprocess_function(examples):
@@ -38,7 +40,6 @@ if __name__ == "__main__":
                                                             num_labels=2, 
                                                             id2label=id2label, 
                                                             label2id=label2id)
-
     print("LOAD DATA")
     data = loader.load_data()
 
@@ -56,7 +57,7 @@ if __name__ == "__main__":
 
         # Documentation: https://huggingface.co/transformers/v3.0.2/main_classes/trainer.html
         training_args = TrainingArguments(
-            output_dir=f"results/bert-base-uncased/{name}",
+            output_dir=f"results/text/{model_name}/{name}",
             per_device_train_batch_size=32,
             evaluation_strategy="epoch",
             learning_rate=4e-5, # Initial learning rate for Adam
@@ -65,17 +66,17 @@ if __name__ == "__main__":
             num_train_epochs=10
             )
 
-    #     trainer = Trainer(
-    #         model=model,
-    #         args=training_args,
-    #         data_collator= data_collator,
-    #         train_dataset=tokenized["train"],
-    #         eval_dataset=tokenized["test"],
-    #         compute_metrics=compute_metrics
-    #         # Default optimizer is AdamW
-    #         )
+        trainer = Trainer(
+            model=model,
+            args=training_args,
+            data_collator= data_collator,
+            train_dataset=tokenized["train"],
+            eval_dataset=tokenized["test"],
+            compute_metrics=compute_metrics
+            # Default optimizer is AdamW
+            )
         
-    #     print("START TRAINING")
-    #     trainer.train()
+        print("START TRAINING")
+        trainer.train()
 
-    #     trainer.save_model()
+        trainer.save_model()

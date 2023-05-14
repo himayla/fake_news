@@ -1,3 +1,4 @@
+# Load data (for both classifiers)
 import pandas as pd
 import os
 import cleaner
@@ -38,15 +39,18 @@ def load_data(arg=False):
 
     return data
 
+
 def load_fake(path):
     # Load Fake and Real News dataset by Mcintire
-    fake_real = pd.read_csv(path)[:10]
+    fake_real = pd.read_csv(path)
+
     # Remove metadata from datasets
     fake_real = fake_real.drop(columns=["idd", "title"])
 
     fake_real.loc[:,"text"] = fake_real.apply(lambda x: cleaner.preprocess(x["text"]), axis=1) 
 
     return fake_real
+
 
 def load_liar(path):
     # Load Liar dataset by Wang
@@ -75,6 +79,7 @@ def load_liar(path):
     liar.loc[:, 'text'] = liar.apply(lambda x: cleaner.preprocess(x["text"]), axis=1)
 
     return liar
+
 
 def load_kaggle(path):
     df_real = pd.read_csv(f"{path}/True.csv")

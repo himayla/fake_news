@@ -3,26 +3,17 @@ import pandas as pd
 import subprocess
 import loader
 import os
-import re
-import string
 import json
-import contractions
 
 def df_to_doc(clean_text):
-    # TODO: Fix cleaning issues
     global counter
     with open(f"temp/news/{counter}.txt", "a+") as text_file:
-        expanded_text = []
-        for word in clean_text.split():
-            expanded_text.append(contractions.fix(word))  
-        clean_text = ' '.join(expanded_text)
-        clean_text = re.sub(r'[``“”’,"\'-]', "", clean_text) # Remove weird quotation things
-        clean_text = re.sub(r'\n', " ", clean_text) # Remove weird quotation things
         text_file.write(clean_text)
     counter += 1
 
+
 def extract_argumentation():
-    tool = "AM/MARGOT/run_margot.sh" # Default
+    tool = "AM/MARGOT/run_margot.sh" # Default AM tool
     for idx, file in enumerate(sorted(os.listdir("temp/news"))):
         input = f"../../temp/news/{file}"
         output = f"../../temp/arguments/{idx}"
@@ -35,22 +26,20 @@ def extract_argumentation():
     return pd.DataFrame.from_dict(res, orient='index')
 
 
-
 def parse_output():
     argument_structures = {}
     for dir in sorted(os.listdir("temp/arguments")):
         with open(f"temp/arguments/{dir}/OUTPUT.json") as json_file:
             doc = json.loads(json_file.read())
-            args = []
+            args = {"claim": [], "evidence": []}
 
             for sent in doc["document"]:
 
                 if sent.get("claim"):
-                    args.append((sent["claim"], "claim"))
+                    args["claim"].append(sent["claim"])
 
                 elif sent.get("evidence"):
-                    args.append((sent["evidence"], "evidence"))
-        
+                    args["evidence"].append(sent["evidence"])
 
         argument_structures[dir] = args
     
@@ -75,6 +64,7 @@ if __name__ == "__main__":
 
         # Write result data/argumentation_structure
         result.to_csv(f"am/output/{name}.csv")
+        result.to_csv(f"am/output/{name}.xlsx")
 
     # TODO: Train on the result
 

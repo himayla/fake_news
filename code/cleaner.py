@@ -10,8 +10,8 @@ from textblob import TextBlob
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 import time
-from unidecode import unidecode
-import contractions
+# from unidecode import unidecode
+# import contractions
 import re
 
 # Load NLTK stopwords and Snowball stemmer
