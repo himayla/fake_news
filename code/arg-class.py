@@ -13,7 +13,7 @@ def df_to_doc(clean_text):
 
 
 def extract_argumentation():
-    tool = "AM/MARGOT/run_margot.sh" # Default AM tool
+    tool = "am/MARGOT/run_margot.sh" # Default AM tool
     for idx, file in enumerate(sorted(os.listdir("temp/news"))):
         input = f"../../temp/news/{file}"
         output = f"../../temp/arguments/{idx}"
@@ -55,6 +55,8 @@ if __name__ == "__main__":
     
     for name, df in data.items():
         print(f"Data: {name}, {len(df)}")
+
+        df.dropna(inplace=True)
     
         # Convert news values out to documents
         df.apply(lambda x: df_to_doc(x["text"]), axis=1)
