@@ -6,6 +6,7 @@ import cleaner
 def load_data(arg=False):
     data = {}
     for name in os.listdir("data/original"):
+        print(f"Load {name}")
         if arg:
             if os.path.exists(f"data/clean/arg/{name}.csv"):
                 df = pd.read_csv(f"data/clean/arg/{name}.csv")
@@ -41,6 +42,7 @@ def load_data(arg=False):
 
 
 def load_fake(path):
+    print("Load Fake Real")
     # Load Fake and Real News dataset by Mcintire
     fake_real = pd.read_csv(path)
 
@@ -53,6 +55,8 @@ def load_fake(path):
 
 
 def load_liar(path):
+    print("Load Liar")
+
     # Load Liar dataset by Wang
     labels = ["id", "label", "statement", "subject", "speaker", "job_title", "state_info", "party_affiliation", "barely_true_counts", "false_counts", "half_true_counts", "mostly_true_counts", "pants_on_fire_counts", "context"]
 
@@ -82,6 +86,8 @@ def load_liar(path):
 
 
 def load_kaggle(path):
+    print("Load Kaggle")
+
     df_real = pd.read_csv(f"{path}/True.csv")
     df_real["label"] = "REAL"
 

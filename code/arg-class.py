@@ -4,13 +4,15 @@ import subprocess
 import loader
 import os
 import json
+from tqdm import tqdm
+
 
 def df_to_doc(clean_text):
     global counter
     with open(f"temp/news/{counter}.txt", "a+") as text_file:
         text_file.write(clean_text)
     counter += 1
-
+    
 
 def extract_argumentation():
     tool = "am/MARGOT/run_margot.sh" # Default AM tool
@@ -21,7 +23,7 @@ def extract_argumentation():
 
     res = parse_output()
 
-    res = {k: [v] for k, v in res.items()}
+    #res = {k: [v] for k, v in res.items()}
 
     return pd.DataFrame.from_dict(res, orient='index')
 
@@ -29,7 +31,7 @@ def extract_argumentation():
 def parse_output():
     argument_structures = {}
     for dir in sorted(os.listdir("temp/arguments")):
-        with open(f"temp/arguments/{dir}/OUTPUT.json") as json_file:
+        with open(f"temp/arguments/{dir}/OUTPUT.json", "w") as json_file:
             doc = json.loads(json_file.read())
             args = {"claim": [], "evidence": []}
 
@@ -46,10 +48,11 @@ def parse_output():
     return argument_structures
 
 if __name__ == "__main__":
-    counter = 0 
-
     # TODO: Implement command-line arguments so that different AM-tools can be used
     # parse_commands()
+    counter = 0
+
+    tqdm.pandas()
 
     data = loader.load_data(arg=True)
     
@@ -59,7 +62,7 @@ if __name__ == "__main__":
         df.dropna(inplace=True)
     
         # Convert news values out to documents
-        df.apply(lambda x: df_to_doc(x["text"]), axis=1)
+        df.progress_apply(lambda x: df_to_doc(x["text"]), axis=1)
 
         # Run Margot over the documents
         result = extract_argumentation()
