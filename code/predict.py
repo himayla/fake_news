@@ -1,4 +1,3 @@
-import loader
 from datasets import Dataset
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from torch.utils.data import DataLoader
@@ -7,13 +6,13 @@ import torch
 import pandas as pd
 import evaluate
 from tqdm import tqdm
+import loader
+
 
 model_name = "bert-base-uncased"
-
-path = f"./results/{model_name}/fake_real/checkpoint-1000/"
-
-model = AutoModelForSequenceClassification.from_pretrained(path)
 tokenizer = AutoTokenizer.from_pretrained(model_name) 
+
+checkpoints = {"fake_real": '1000/', "kaggle": '1500/', "liar": '2500/'}
 
 metric = evaluate.combine(["accuracy", "f1", "precision", "recall"])
 
@@ -33,6 +32,11 @@ if __name__ == "__main__":
     res = {}
 
     for name in os.listdir("data/original"):
+        checkpoint = checkpoints[name]
+        path = f"./results/text/{model_name}/{name}/checkpoint-" + checkpoint
+
+        model = AutoModelForSequenceClassification.from_pretrained(path)
+        
         df = pd.read_csv(f"data/clean/test/{name}.csv")
 
         print(f"Data: {name}, {len(df)}")
