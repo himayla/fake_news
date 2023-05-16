@@ -9,16 +9,17 @@ from tqdm import tqdm
 
 def df_to_doc(clean_text):
     global counter
-    with open(f"temp/news/{counter}.txt", "a+") as text_file:
+    with open(f"am/MARGOT/temp/news/{counter}.txt", "a+") as text_file:
         text_file.write(clean_text)
     counter += 1
     
 
 def extract_argumentation():
     tool = "am/MARGOT/run_margot.sh" # Default AM tool
-    for idx, file in enumerate(sorted(os.listdir("temp/news"))):
-        input = f"../../temp/news/{file}"
-        output = f"../../temp/arguments/{idx}"
+    for idx, file in enumerate(sorted(os.listdir("am/MARGOT/temp/news"))):
+        print(idx, file)
+        input = f"temp/news/{file}"
+        output = f"temp/arguments/{idx}"
         subprocess.call([tool, input, output])
 
     res = parse_output()
@@ -30,8 +31,8 @@ def extract_argumentation():
 
 def parse_output():
     argument_structures = {}
-    for dir in sorted(os.listdir("temp/arguments")):
-        with open(f"temp/arguments/{dir}/OUTPUT.json", "w") as json_file:
+    for dir in sorted(os.listdir("am/MARGOT/temp/arguments")):
+        with open(f"am/MARGOT/temp/arguments/{dir}/OUTPUT.json") as json_file:
             doc = json.loads(json_file.read())
             args = {"claim": [], "evidence": []}
 
@@ -68,8 +69,8 @@ if __name__ == "__main__":
         result = extract_argumentation()
 
         # Write result data/argumentation_structure
-        result.to_csv(f"am/output/{name}.csv")
-        result.to_csv(f"am/output/{name}.xlsx")
+        result.to_csv(f"am/MARGOT/output/{name}.csv")
+        result.to_csv(f"am/MARGOT/output/{name}.xlsx")
 
     # TODO: Train on the result
 
