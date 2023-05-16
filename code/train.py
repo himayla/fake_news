@@ -14,7 +14,7 @@ import loader
 
 SEED = 42
 
-all_models = ["bert-base-uncased", "roberta-base", "DistilBERT"] #TODO: Elektra? #TODO: Elmo?
+all_models = ["bert-base-uncased/checkpoint-1000"]#, "roberta-base", "DistilBERT"] #TODO: Elektra? #TODO: Elmo?
 
 model_name = "roberta-base"
 tokenizer = AutoTokenizer.from_pretrained(model_name) # Use pretrained model vocab
@@ -49,6 +49,10 @@ if __name__ == "__main__":
         print("PREPROCESS DATA")
 
         df = Dataset.from_pandas(df).train_test_split(test_size=0.3, seed=42).class_encode_column("label")
+
+        if "Unnamed: 0" in df["test"]:
+            df["test"] = df["test"].rename_column("Unnamed: 0", "ID")
+        df["test"].to_csv("test.csv", index=False)
 
         tokenized = df.map(preprocess_function, batched=True)
         data_collator = DataCollatorWithPadding(tokenizer=tokenizer, max_length=300)

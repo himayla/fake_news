@@ -2,15 +2,46 @@
 import pandas as pd
 import os
 import cleaner
+from datasets import Dataset
+
+
+def load_eval():
+    data = {}
+    for name in os.listdir("data/original"):
+        if os.path.exists(f"data/test/{name}.csv"):
+            data[name] = pd.read_csv(f"data/test/{name}.csv")
+        else:
+            if name == "fake_real":
+                df = load_fake(f"data/original/{name}/{name}.csv")
+            elif name == "liar":
+                df = load_liar(f"data/original/{name}")
+            elif name == "kaggle":
+                df = load_kaggle(f"data/original/{name}")
+
+            df = Dataset.from_pandas(df).train_test_split(test_size=0.3, seed=42).class_encode_column("label")
+
+            data = df["test"]
+
+            if "Unnamed: 0" in df["test"]:
+                data = data.rename_column("Unnamed: 0", "ID")
+
+            data.to_csv(f"data/clean/test/{name}.csv")
+
+    return data
 
 def load_data(arg=False):
     data = {}
     for name in os.listdir("data/original"):
-        print(f"Load {name}")
+        print("------------------------------------")
+        print(f"Load {name}...")
         if arg:
+            print(f"Mode: argumentation")
             if os.path.exists(f"data/clean/arg/{name}.csv"):
+                print("Loading clean data for argumentation...")
                 df = pd.read_csv(f"data/clean/arg/{name}.csv")
             else:
+                print("Cleaning data for argumentation-based classifyer...")
+
                 if name == "fake_real":
                     df = load_fake(f"data/original/{name}/{name}.csv")
                 elif name == "liar":
@@ -23,8 +54,11 @@ def load_data(arg=False):
                 df.to_excel(f"data/clean/arg/{name}.xlsx")
         else:
             if os.path.exists(f"data/clean/text/{name}.csv"):
+                print(f"Loading clean data for text-based classifyer...")
                 df = pd.read_csv(f"data/clean/text/{name}.csv")
             else:
+                print("Cleaning data for text-based classifyer...")
+
                 if name == "fake_real":
                     df = load_fake(f"data/original/{name}/{name}.csv")
                 elif name == "liar":
@@ -37,12 +71,12 @@ def load_data(arg=False):
                 df.to_excel(f"data/clean/text/{name}.xlsx")  
           
         data[name] =  df
+        print("------------------------------------")
 
     return data
 
 
 def load_fake(path):
-    print("Load Fake Real")
     # Load Fake and Real News dataset by Mcintire
     fake_real = pd.read_csv(path)
 
@@ -55,8 +89,6 @@ def load_fake(path):
 
 
 def load_liar(path):
-    print("Load Liar")
-
     # Load Liar dataset by Wang
     labels = ["id", "label", "statement", "subject", "speaker", "job_title", "state_info", "party_affiliation", "barely_true_counts", "false_counts", "half_true_counts", "mostly_true_counts", "pants_on_fire_counts", "context"]
 
@@ -86,8 +118,6 @@ def load_liar(path):
 
 
 def load_kaggle(path):
-    print("Load Kaggle")
-
     df_real = pd.read_csv(f"{path}/True.csv")
     df_real["label"] = "REAL"
 

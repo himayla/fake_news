@@ -1,28 +1,54 @@
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer
+import loader
+from datasets import Dataset
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from torch.utils.data import DataLoader
+import os
+import torch
+import pandas as pd
+import evaluate
+from tqdm import tqdm
 
-tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+model_name = "bert-base-uncased"
 
-id2label = {0: "FAKE", 1: "REAL"}
-label2id = {"FAKE": 0, "REAL": 1}
+path = f"./results/{model_name}/fake_real/checkpoint-1000/"
 
-print("Making predictions...")
+model = AutoModelForSequenceClassification.from_pretrained(path)
+tokenizer = AutoTokenizer.from_pretrained(model_name) 
 
-model = AutoModelForSequenceClassification.from_pretrained("bert/checkpoint-3")
+metric = evaluate.combine(["accuracy", "f1", "precision", "recall"])
 
-fake = "Michelle Obama Deletes Hillary Clinton From Twitter"
-fake1 = "Pope Francis Shocks World, Endorses Donald Trump For President"
-fake2 = "Health care reform legislation is likely to mandate free sex change surgeries."
-real = "Russia Targets Ukraine With Overnight Drone Strikes"
+def predict(row):
+    tokenized_text = tokenizer(row['text'], truncation=True,  return_tensors="pt")
+    outputs = model(**tokenized_text)
+    predicted_class = outputs.logits.argmax().item()
 
-input_sentence = fake
+    return predicted_class
+    
 
-encoding = tokenizer(input_sentence, return_tensors="pt")
-print(f"Input sentence: {input_sentence}")
+if __name__ == "__main__":
+    tqdm.pandas()
 
-outputs = model(**encoding)
+    data = loader.load_eval()
 
-logits = outputs.logits
+    res = {}
 
-predicted_class_id = logits.argmax().item()
-prediction = model.config.id2label[predicted_class_id]
-print(prediction)
+    for name in os.listdir("data/original"):
+        df = pd.read_csv(f"data/clean/test/{name}.csv")
+
+        print(f"Data: {name}, {len(df)}")
+        print("------------------------------------")
+
+        gold_labels = df["label"].values
+        df.drop("label", axis=1, inplace=True)
+
+        df["prediction"] = df.progress_apply(lambda row: predict(row), axis=1)
+        predictions = df["prediction"].values
+
+        results = metric.compute(predictions=predictions, references=gold_labels)
+
+        res[name] = results
+
+    output = pd.DataFrame.from_dict(res)
+    print(output)
+    output.to_excel("RESULTS.xlsx")
+
