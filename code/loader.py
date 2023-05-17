@@ -16,7 +16,7 @@ def load_eval():
             elif name == "liar":
                 df = load_liar(f"data/original/{name}")
             elif name == "kaggle":
-                df = load_kaggle(f"data/original/{name}")
+                df = load_kaggle(f"data/original/{name}") 
 
             df = Dataset.from_pandas(df).train_test_split(test_size=0.3, seed=42).class_encode_column("label")
 
@@ -38,9 +38,12 @@ def load_data(arg=False):
             print(f"Mode: argumentation")
             if os.path.exists(f"data/clean/arg/{name}.csv"):
                 print("Loading clean data for argumentation...")
-                df = pd.read_csv(f"data/clean/arg/{name}.csv")
+                if name == "kaggle":
+                    df = pd.read_csv(f"data/clean/arg/kaggle.csv", nrows=4000)# CAPPED AT 4.000
+                else:
+                    df = pd.read_csv(f"data/clean/arg/{name}.csv")
             else:
-                print("Cleaning data for argumentation-based classifyer...")
+                print("Cleaning the data for argumentation-based classifyer...")
 
                 if name == "fake_real":
                     df = load_fake(f"data/original/{name}/{name}.csv")

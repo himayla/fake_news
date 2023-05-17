@@ -3,7 +3,7 @@ data/
 am/
 __pycache__/
 env/
-results/
+models/
 temp/
 scripts/
 output/

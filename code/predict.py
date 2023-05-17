@@ -1,13 +1,11 @@
 from datasets import Dataset
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
-from torch.utils.data import DataLoader
 import os
 import torch
 import pandas as pd
 import evaluate
 from tqdm import tqdm
 import loader
-
 
 model_name = "bert-base-uncased"
 tokenizer = AutoTokenizer.from_pretrained(model_name) 
@@ -33,7 +31,7 @@ if __name__ == "__main__":
 
     for name in os.listdir("data/original"):
         checkpoint = checkpoints[name]
-        path = f"./results/text/{model_name}/{name}/checkpoint-" + checkpoint
+        path = f"./models/text/{model_name}/{name}/checkpoint-" + checkpoint
 
         model = AutoModelForSequenceClassification.from_pretrained(path)
         
@@ -55,4 +53,4 @@ if __name__ == "__main__":
     output = pd.DataFrame.from_dict(res)
     print(output)
     output.to_excel("RESULTS.xlsx")
-
+    output.to_csv("RESULTS.xlsx")
