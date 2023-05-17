@@ -21,25 +21,28 @@ def extract_argumentation():
     for idx, file in enumerate(sorted(os.listdir("am/MARGOT/version_1/temp/news"), key=lambda x: int(x.split('.')[0]))):
 
         print(idx, file)
-        total = len(f"temp/news/{file}")
+        total = len(os.listdir("am/MARGOT/version_1/temp/news"))
+        print(total)
         print("------------------------------------")
+        print(f"At step:{step}")
+        print("------------------------------------")
+
 
         input = f"version_1/temp/news/{file}"
         output = f"version_1/temp/arguments/{idx}"
         subprocess.call([tool, input, output])
 
         step += 1
-        print(f"At step:{step}")
         print()
 
         # Write out temporary results
         if step in np.arange(0, total, 5):
+            print("Writing out temp results")
             res = parse_output()
             temp_result = pd.DataFrame.from_dict(res, orient='index')
             temp_result.to_csv(f"am/MARGOT/version_1/temp_results/temp_{name}.csv")
             temp_result.to_csv(f"am/MARGOT/version_1/temp_results/temp_{name}.xlsx")            
 
-        print("------------------------------------")
 
     res = parse_output()
 
@@ -51,7 +54,6 @@ def extract_argumentation():
 def parse_output():
     argument_structures = {}
     for dir in sorted(os.listdir("am/MARGOT/version_1/temp/arguments"), key=lambda x: int(x.split('.')[0])):
-        print(dir)
         with open(f"am/MARGOT/version_1/temp/arguments/{dir}/OUTPUT.json") as json_file:
 
             doc = json.loads(json_file.read())
@@ -72,14 +74,15 @@ def parse_output():
 if __name__ == "__main__":
     # TODO: Implement command-line arguments so that different AM-tools can be used
     # parse_commands()
-    counter = 0
-    step = 0
+
 
     tqdm.pandas()
 
     data = loader.load_data(arg=True)
     
     for name, df in data.items():
+        step = 0
+        counter = 0
         print(f"Data: {name}, {len(df)}")
 
         df.dropna(inplace=True)
@@ -92,7 +95,6 @@ if __name__ == "__main__":
 
         # Convert news values out to documents
         df.progress_apply(lambda x: df_to_doc(x["text"]), axis=1)
-
         # Run Margot over the documents
         result = extract_argumentation()
 
