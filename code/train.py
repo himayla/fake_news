@@ -90,7 +90,6 @@ if __name__ == "__main__":
         
         writer = SummaryWriter(log_dir=training_args.logging_dir)
 
-
         print("START TRAINING")
         trainer.train()
 

@@ -34,9 +34,9 @@ def load_data(arg=False):
             if os.path.exists(f"data/clean/text/{name}.csv"):
                 print(f"Loading clean data for text-based classifyer...")
                 if name == "kaggle":
-                    df = pd.read_csv(f"data/clean/text/kaggle.csv", nrows=25)# CAPPED AT 4.000
+                    df = pd.read_csv(f"data/clean/text/kaggle.csv", nrows=4000)# CAPPED AT 4.000
                 else:
-                    df = pd.read_csv(f"data/clean/text/{name}.csv", nrows=25)
+                    df = pd.read_csv(f"data/clean/text/{name}.csv")
             else:
                 print("Cleaning data for text-based classifyer...")
 

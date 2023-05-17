@@ -22,7 +22,6 @@ def extract_argumentation():
 
         print(idx, file)
         total = len(os.listdir("am/MARGOT/version_1/temp/news"))
-        print(total)
         print("------------------------------------")
         print(f"At step:{step}")
         print("------------------------------------")
@@ -36,7 +35,7 @@ def extract_argumentation():
         print()
 
         # Write out temporary results
-        if step in np.arange(0, total, 5):
+        if step in np.arange(0, total, 150):
             print("Writing out temp results")
             res = parse_output()
             temp_result = pd.DataFrame.from_dict(res, orient='index')
@@ -74,8 +73,6 @@ def parse_output():
 if __name__ == "__main__":
     # TODO: Implement command-line arguments so that different AM-tools can be used
     # parse_commands()
-
-
     tqdm.pandas()
 
     data = loader.load_data(arg=True)
