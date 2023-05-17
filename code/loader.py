@@ -4,31 +4,6 @@ import os
 import cleaner
 from datasets import Dataset
 
-
-def load_eval():
-    data = {}
-    for name in os.listdir("data/original"):
-        if os.path.exists(f"data/test/{name}.csv"):
-            data[name] = pd.read_csv(f"data/test/{name}.csv")
-        else:
-            if name == "fake_real":
-                df = load_fake(f"data/original/{name}/{name}.csv")
-            elif name == "liar":
-                df = load_liar(f"data/original/{name}")
-            elif name == "kaggle":
-                df = load_kaggle(f"data/original/{name}") 
-
-            df = Dataset.from_pandas(df).train_test_split(test_size=0.3, seed=42).class_encode_column("label")
-
-            data = df["test"]
-
-            if "Unnamed: 0" in df["test"]:
-                data = data.rename_column("Unnamed: 0", "ID")
-
-            data.to_csv(f"data/clean/test/{name}.csv")
-
-    return data
-
 def load_data(arg=False):
     data = {}
     for name in os.listdir("data/original"):
@@ -58,7 +33,10 @@ def load_data(arg=False):
         else:
             if os.path.exists(f"data/clean/text/{name}.csv"):
                 print(f"Loading clean data for text-based classifyer...")
-                df = pd.read_csv(f"data/clean/text/{name}.csv")
+                if name == "kaggle":
+                    df = pd.read_csv(f"data/clean/text/kaggle.csv", nrows=25)# CAPPED AT 4.000
+                else:
+                    df = pd.read_csv(f"data/clean/text/{name}.csv", nrows=25)
             else:
                 print("Cleaning data for text-based classifyer...")
 
@@ -72,7 +50,8 @@ def load_data(arg=False):
                 df.loc[:,"text"] = df.apply(lambda x: cleaner.prep_text_based(x["text"]), axis=1) 
                 df.to_csv(f"data/clean/text/{name}.csv")
                 df.to_excel(f"data/clean/text/{name}.xlsx")  
-          
+        df.rename(columns={"Unnamed: 0": "ID"}, inplace=True)
+        df.set_index("ID", inplace=True)
         data[name] =  df
         print("------------------------------------")
 
@@ -135,3 +114,27 @@ def load_kaggle(path):
     kaggle.loc[:, 'text'] = kaggle.apply(lambda x: cleaner.preprocess(x["text"]), axis=1)
   
     return kaggle
+
+def load_eval():
+    data = {}
+    for name in os.listdir("data/original"):
+        if os.path.exists(f"data/test/{name}.csv"):
+            data[name] = pd.read_csv(f"data/test/{name}.csv")
+        else:
+            if name == "fake_real":
+                df = load_fake(f"data/original/{name}/{name}.csv")
+            elif name == "liar":
+                df = load_liar(f"data/original/{name}")
+            elif name == "kaggle":
+                df = load_kaggle(f"data/original/{name}") 
+
+            df = Dataset.from_pandas(df).train_test_split(test_size=0.3, seed=42).class_encode_column("label")
+
+            data = df["test"]
+
+            if "Unnamed: 0" in df["test"]:
+                data = data.rename_column("Unnamed: 0", "ID")
+
+            data.to_csv(f"data/clean/test/{name}.csv")
+
+    return data
