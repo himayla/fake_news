@@ -7,3 +7,5 @@ models/
 temp/
 scripts/
 output/
+.pytest_cache
+archive/
