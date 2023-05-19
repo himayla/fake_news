@@ -29,29 +29,31 @@ def load_data(arg=False):
     
                 df.loc[:, 'text'] = df.apply(lambda x: cleaner.prep_argumentation_based(x["text"]), axis=1) 
                 df.to_csv(f"data/clean/arg/{name}.csv")
+                df.to_csv(f"data/clean/arg/{name}.tsv")
                 df.to_excel(f"data/clean/arg/{name}.xlsx")
         else:
             if os.path.exists(f"data/clean/text/{name}.csv"):
                 print(f"Loading clean data for text-based classifyer...")
                 if name == "kaggle":
-                    df = pd.read_csv(f"data/clean/text/kaggle.csv", nrows=25)# CAPPED AT 4.000
+                    df = pd.read_csv(f"data/clean/text/kaggle.csv", nrows=4000)# CAPPED AT 4.000
                 else:
-                    df = pd.read_csv(f"data/clean/text/{name}.csv", nrows=25)
+                    df = pd.read_csv(f"data/clean/text/{name}.csv")
             else:
                 print("Cleaning data for text-based classifyer...")
 
                 if name == "fake_real":
-                    df = load_fake(f"data/original/{name}/{name}.csv")
+                    df = load_fake(f"data/original/{name}/{name}.csv")[:5]
                 elif name == "liar":
-                    df = load_liar(f"data/original/{name}")
+                    df = load_liar(f"data/original/{name}")[:5]
                 elif name == "kaggle":
-                    df = load_kaggle(f"data/original/{name}")
+                    df = load_kaggle(f"data/original/{name}")[:5]
+                    df = df.rename(columns={"Unnamed: 0": "ID"})
+
     
                 df.loc[:,"text"] = df.apply(lambda x: cleaner.prep_text_based(x["text"]), axis=1) 
-                df.to_csv(f"data/clean/text/{name}.csv")
+                df.to_csv(f"data/clean/text/{name}.tsv", sep="\t", columns=["text", "label"], index=False)
+                df.to_csv(f"data/clean/text/{name}.csv", columns=["text", "label"], index=False)
                 df.to_excel(f"data/clean/text/{name}.xlsx")  
-        df.rename(columns={"Unnamed: 0": "ID"}, inplace=True)
-        df.set_index("ID", inplace=True)
         data[name] =  df
         print("------------------------------------")
 
@@ -132,9 +134,8 @@ def load_eval():
 
             data = df["test"]
 
-            if "Unnamed: 0" in df["test"]:
-                data = data.rename_column("Unnamed: 0", "ID")
-
+            data.to_csv(f"data/clean/test/{name}.tsv", sep="\t")
             data.to_csv(f"data/clean/test/{name}.csv")
+            data.to_excel(f"data/clean/test/{name}.xlsx")
 
     return data
