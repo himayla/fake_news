@@ -3,6 +3,8 @@ import pandas as pd
 import os
 import cleaner
 from datasets import Dataset
+import writer
+import numpy as np
 
 def load_data(arg=False):
     data = {}
@@ -14,9 +16,16 @@ def load_data(arg=False):
             if os.path.exists(f"data/clean/arg/{name}.csv"):
                 print("Loading clean data for argumentation...")
                 if name == "kaggle":
-                    df = pd.read_csv(f"data/clean/arg/kaggle.csv", nrows=4000)# CAPPED AT 4.000
+                    df = pd.read_csv(f"data/clean/arg/kaggle.csv", nrows=4000, index_col="ID")# CAPPED AT 4.000
+                    #writer.write_data(df, f"data/clean/arg/{name}", cols=["text", "label"])
+                    #df.index.name = 'ID'
+                    writer.write_data(df["label"], f"data/clean/arg/labels/{name}")
                 else:
-                    df = pd.read_csv(f"data/clean/arg/{name}.csv")
+                    df = pd.read_csv(f"data/clean/arg/{name}.csv", index_col="ID")
+                    ###### writer.write_data(df, f"data/clean/arg/{name}", cols=["text", "label"])
+                    #df.index.name = 'ID'
+                    writer.write_data(df["label"], f"data/clean/arg/labels/{name}")
+
             else:
                 print("Cleaning the data for argumentation-based classifyer...")
 
@@ -31,6 +40,9 @@ def load_data(arg=False):
                 df.to_csv(f"data/clean/arg/{name}.csv")
                 df.to_csv(f"data/clean/arg/{name}.tsv")
                 df.to_excel(f"data/clean/arg/{name}.xlsx")
+                #print(df.columns)
+                #writer.write_data(df, f"data/clean/arg/{name}")
+
         else:
             if os.path.exists(f"data/clean1/text/{name}.csv"):
                 print(f"Loading clean data for text-based classifyer...")
@@ -113,6 +125,9 @@ def load_kaggle(path):
 
     kaggle = kaggle.drop_duplicates(subset=["text"])
 
+    kaggle = np.random.shuffle(kaggle.values)
+
+
     kaggle.loc[:, 'text'] = kaggle.apply(lambda x: cleaner.preprocess(x["text"]), axis=1)
   
     return kaggle
@@ -147,5 +162,31 @@ def load_tsv():
             data[file.split('.')[0]] = pd.read_csv(f"data/clean/test/{file}", sep="\t")
     return data
 
+def load_annotated():
+    path = "data/clean/arg/annotated"
+    data = {}
+    for file in os.listdir(path):
+        if file.endswith(".csv"):
+            name = file.split('-')[0]
+            df = pd.read_csv(f"{path}/{file}", index_col=['Unnamed: 0'])
+            df.index.name = "ID"
 
+            # Only continue with rows that either contain claim no evidence
+            mask = (df['claim'] != "[]") | (df['evidence'] != "[]")
+            df = df.loc[mask]
 
+            # Add the labels TRUE/FALSE from original
+            path_to_labels = "data/clean/arg/labels"
+
+            df_labels = pd.read_csv(f"{path_to_labels}/{name}.csv", index_col=['ID'])
+            merged_df = df.merge(df_labels, left_index=True, right_index=True, how='left')
+
+            merged_df.index.name = 'ID'
+
+            # Merge claim and evidence together as "text"
+            merged_df["text"] = merged_df["claim"] + merged_df["evidence"]
+            merged_df = merged_df.drop(['claim', 'evidence'], axis=1)
+
+            data[name] = merged_df
+
+    return data
