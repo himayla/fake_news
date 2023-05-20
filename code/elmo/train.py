@@ -13,11 +13,15 @@ from allennlp.training.trainer import Trainer
 from allennlp.training import GradientDescentTrainer
 from allennlp.training.optimizers import AdamOptimizer
 from allennlp.modules.token_embedders import ElmoTokenEmbedder
+import sys
+import os
 
 from dataset_reader import ClassificationTsvReader
 from model import LSTM_Classifier
 from allennlp.data.token_indexers.elmo_indexer import ELMoTokenCharactersIndexer
-
+path = os.path.abspath("/home/mkersten/fake_news/code")
+sys.path.append(path)
+import loader
 #TODO 92
 def build_dataset_reader() -> DatasetReader:
     elmo_token_indexer = ELMoTokenCharactersIndexer()
@@ -86,12 +90,15 @@ def build_trainer(
     return trainer
 
 
-def run_training_loop(serialization_dir: str):
+def run_training_loop(serialization_dir: str, name: str):
     reader = build_dataset_reader()
     # TODO SECOND PATH == VALIDATION DATA!!!
 
+    train_data = f"data/clean/text/{name}.tsv"
+    test_data = f"data/clean/test/{name}.tsv"
+
     train_loader, dev_loader = build_data_loaders(
-        reader, "../../data/clean/text/fake_real.tsv", "../../data/clean/text/fake_real.tsv"
+        reader, train_data, test_data
     )
 
 
@@ -119,4 +126,8 @@ def run_training_loop(serialization_dir: str):
     print("Finished training")
 
 if __name__ == "__main__":
-    run_training_loop(serialization_dir="results/")
+    data = loader.load_tsv()
+
+    for name, df in data.items():
+        print(name)
+        run_training_loop(serialization_dir=f"results/{name}/", name=name)

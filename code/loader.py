@@ -32,7 +32,7 @@ def load_data(arg=False):
                 df.to_csv(f"data/clean/arg/{name}.tsv")
                 df.to_excel(f"data/clean/arg/{name}.xlsx")
         else:
-            if os.path.exists(f"data/clean/text/{name}.csv"):
+            if os.path.exists(f"data/clean1/text/{name}.csv"):
                 print(f"Loading clean data for text-based classifyer...")
                 if name == "kaggle":
                     df = pd.read_csv(f"data/clean/text/kaggle.csv", nrows=4000)# CAPPED AT 4.000
@@ -42,11 +42,11 @@ def load_data(arg=False):
                 print("Cleaning data for text-based classifyer...")
 
                 if name == "fake_real":
-                    df = load_fake(f"data/original/{name}/{name}.csv")[:5]
+                    df = load_fake(f"data/original/{name}/{name}.csv")
                 elif name == "liar":
-                    df = load_liar(f"data/original/{name}")[:5]
+                    df = load_liar(f"data/original/{name}")
                 elif name == "kaggle":
-                    df = load_kaggle(f"data/original/{name}")[:5]
+                    df = load_kaggle(f"data/original/{name}")[:4000]
                     df = df.rename(columns={"Unnamed: 0": "ID"})
 
     
@@ -134,8 +134,18 @@ def load_eval():
 
             data = df["test"]
 
-            data.to_csv(f"data/clean/test/{name}.tsv", sep="\t")
+            data.to_csv(f"data/clean/test/{name}.tsv", sep="\t", columns=["text", "label"], index=False)
             data.to_csv(f"data/clean/test/{name}.csv")
-            data.to_excel(f"data/clean/test/{name}.xlsx")
+            #data.to_excel(f"data/clean/test/{name}.xlsx")
 
     return data
+
+def load_tsv():
+    data = {}
+    for file in os.listdir("data/clean/test"): 
+        if file.split('.')[1] == 'tsv':
+            data[file.split('.')[0]] = pd.read_csv(f"data/clean/test/{file}", sep="\t")
+    return data
+
+
+

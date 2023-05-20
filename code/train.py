@@ -17,7 +17,7 @@ import loader
 
 SEED = 42
 
-all_models = ["distilbert-base-uncased"]#, "google/electra-base-discriminator"]
+all_models = ["distilbert-base-uncased", "google/electra-base-discriminator"]
 #all_models = ["bert-base-uncased", "roberta-base","distilbert-base-uncased", "google/electra-base-discriminator"]
 
 def preprocess_function(news):
