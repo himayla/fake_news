@@ -6,9 +6,12 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification, Elec
 from transformers import DataCollatorWithPadding, TrainingArguments, Trainer
 from torch.utils.tensorboard import SummaryWriter
 
-import loader, writer
+import loader, write_out
+
+SEED = 42
 
 all_models = ["bert-base-uncased", "roberta-base","distilbert-base-uncased", "google/electra-base-discriminator"]
+mode = "arg"
 
 def preprocess_function(news):
     return tokenizer(news["text"], truncation=True)
@@ -16,15 +19,13 @@ def preprocess_function(news):
 def compute_metrics(eval_pred): 
     predictions, labels = eval_pred
     predictions = np.argmax(predictions, axis=1)
-    metr = metric.compute(predictions=predictions, references=labels)
-    return metr
+    metrics = metric.compute(predictions=predictions, references=labels)
+    return metrics
 
 if __name__ == "__main__":
     print("LOAD DATA")
     print("------------------------------------------------------------------------")
-    #data = loader.load_data(arg=True)
-
-    mode = "arg"
+    loader.load_data_arg("data/original", "data/clean/arg")
 
     data = loader.load_annotated()
     metric = evaluate.combine(["accuracy", "f1", "precision", "recall"])
@@ -44,28 +45,28 @@ if __name__ == "__main__":
         
         for name, df in data.items():
             print(f"DATASET: {name} - LENGTH: {len(df)}")
-            print("------------------------------------")
+            print("------------------------------------------------------------------------")
 
-            if name == "kaggle":
-                # ONLY REAL!!!!!!!!!!!!!
-                print("ERROR")
-                print(len(df["label"] == "REAL"))
+    # #         if name == "kaggle":
+    # #             # ONLY REAL!!!!!!!!!!!!!
+    # #             print("ERROR")
+    # #             print(len(df["label"] == "REAL"))
             
             df = Dataset.from_pandas(df).train_test_split(test_size=0.3, seed=42).class_encode_column("label")
-            writer.write_data(df["test"], f"data/clean/test/annotated/{name}", cols=["claim", "evidence", "label"], tsv=True)
+            write_out.write_data(df["test"], f"data/clean/test/annotated/{name}", cols=["text", "label"], tsv=True)
 
             tokenized = df.map(preprocess_function, batched=True)
             data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
             training_args = TrainingArguments(
-                output_dir=f"models/arg/{model_name}/{name}",
+                output_dir=f"models/{mode}/{model_name}/{name}",
                 per_device_train_batch_size=32,
                 evaluation_strategy="epoch",
                 learning_rate=4e-5, # Initial learning rate for Adam
                 weight_decay=0.01,
                 adam_epsilon=1e-8,
                 num_train_epochs=10,
-                logging_dir=f"models/arg/{model_name}/{name}/logs",  # Specify the directory for TensorBoard logs
+                logging_dir=f"models/{mode}/{model_name}/{name}/logs",  # Specify the directory for TensorBoard logs
                 report_to="tensorboard",
                 )
 

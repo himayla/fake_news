@@ -1,40 +1,40 @@
 #https://github.com/allenai/allennlp-template-python-script/blob/master/my_project/model.py
 #http://www.realworldnlpbook.com/blog/training-sentiment-analyzer-using-allennlp.html #https://github.com/mhagiwara/realworldnlp/blob/master/examples/sentiment/sst_classifier_elmo.py
 
+from allennlp.data import DataLoader, DatasetReader, Vocabulary
+from allennlp.data.token_indexers.elmo_indexer import ELMoTokenCharactersIndexer
+from allennlp.data.data_loaders import MultiProcessDataLoader
 from allennlp.modules.seq2vec_encoders import LstmSeq2VecEncoder
 from allennlp.modules.token_embedders import ElmoTokenEmbedder
-from itertools import chain
-from typing import Tuple
-from allennlp.data import DataLoader, DatasetReader, Vocabulary
-from allennlp.data.data_loaders import MultiProcessDataLoader
-from allennlp.models import Model
 from allennlp.modules.text_field_embedders import BasicTextFieldEmbedder
+from allennlp.models import Model
 from allennlp.training.trainer import Trainer
 from allennlp.training import GradientDescentTrainer
 from allennlp.training.optimizers import AdamOptimizer
-from allennlp.modules.token_embedders import ElmoTokenEmbedder
+from itertools import chain
+from typing import Tuple
 import sys
 import os
-
 from dataset_reader import ClassificationTsvReader
 from model import LSTM_Classifier
-from allennlp.data.token_indexers.elmo_indexer import ELMoTokenCharactersIndexer
+
 path = os.path.abspath("/home/mkersten/fake_news/code")
 sys.path.append(path)
+
 import loader
-#TODO 92
+
+mode = sys.argv[1]
+
 def build_dataset_reader() -> DatasetReader:
     elmo_token_indexer = ELMoTokenCharactersIndexer()
     reader = ClassificationTsvReader(token_indexers={"tokens": elmo_token_indexer})
     return reader
-
 
 def build_vocab(train_loader, dev_loader) -> Vocabulary:
     print("Building the vocabulary")
     return Vocabulary.from_instances(
         chain(train_loader.iter_instances(), dev_loader.iter_instances())
     )
-
 
 def build_model(vocab: Vocabulary) -> Model:
     print("Building the model")
@@ -52,7 +52,6 @@ def build_model(vocab: Vocabulary) -> Model:
 
     return LSTM_Classifier(vocab, embedder, encoder)
 
-
 def build_data_loaders(
     reader,
     train_data_path: str,
@@ -64,7 +63,6 @@ def build_data_loaders(
         reader, validation_data_path, batch_size=32, shuffle=False
     )
     return train_loader, dev_loader
-
 
 def build_trainer(
     model: Model,
@@ -83,7 +81,7 @@ def build_trainer(
         serialization_dir=serialization_dir,
         data_loader=train_loader,
         validation_data_loader=dev_loader,
-        num_epochs=1,
+        num_epochs=10,
         optimizer=optimizer,
         validation_metric="+accuracy",
     )
@@ -92,15 +90,13 @@ def build_trainer(
 
 def run_training_loop(serialization_dir: str, name: str):
     reader = build_dataset_reader()
-    # TODO SECOND PATH == VALIDATION DATA!!!
 
-    train_data = f"data/clean/text/{name}.tsv"
+    train_data = f"data/clean/{mode}/{name}.tsv"
     test_data = f"data/clean/test/{name}.tsv"
 
     train_loader, dev_loader = build_data_loaders(
         reader, train_data, test_data
     )
-
 
     vocab = build_vocab(train_loader, dev_loader)
     model = build_model(vocab)
@@ -126,8 +122,8 @@ def run_training_loop(serialization_dir: str, name: str):
     print("Finished training")
 
 if __name__ == "__main__":
-    data = loader.load_tsv()
+    # data = loader.load_data_text(f"data/original", "data/clean") # Uncomment if newer data
+    data = loader.load_tsv(f"data/clean/{mode}")
 
     for name, df in data.items():
-        print(name)
         run_training_loop(serialization_dir=f"results/{name}/", name=name)
