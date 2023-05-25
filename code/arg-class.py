@@ -89,9 +89,9 @@ if __name__ == "__main__":
             # Run Margot over the documents
             result = extract_argumentation()
 
-            # # Write result data/argumentation_structure
-            write_out(result, f"data/clean/test/annotated/{name}", cols=["text", "label"], tsv=True)
-
+        # Write result data/argumentation_structure
+        result.to_csv(f"am/MARGOT/version_1/fin_{name}.csv")
+        result.to_csv(f"am/MARGOT/version_1/fin_{name}.xlsx")
 
     # TODO: Train on the result
 
