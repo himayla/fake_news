@@ -33,14 +33,16 @@ class ClassificationTsvReader(DatasetReader):
         return Instance(fields)
 
     def _read(self, file_path: str) -> Iterable[Instance]:
+        print(file_path)
         with open(file_path, "r") as lines:
             next(lines) # Skip header
-            for idx, line in enumerate(lines):
+            for line in lines:
                 #print(line)
                 # TODO: Ideally, the output label would be optional when we create the Instances, 
                 # so that we can use the same code to make predictions on unlabeled data
-                try: text, label = line.strip().split("\t")
+                try: 
+                    id, text, label = line.split("\t")
                 except ValueError:
-                    #print(idx, line)
-                    pass
+                    print(line)
+                #     pass
                 yield self.text_to_instance(text, label)

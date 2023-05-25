@@ -9,3 +9,5 @@ scripts/
 output/
 .pytest_cache
 archive/
+results/
+tools/

@@ -1,56 +1,64 @@
-from datasets import Dataset
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
-import os
-import torch
-import pandas as pd
 import evaluate
-from tqdm import tqdm
-import loader
+import os
+import pandas as pd
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, ElectraTokenizer, ElectraForSequenceClassification
 
-model_name = "bert-base-uncased"
-tokenizer = AutoTokenizer.from_pretrained(model_name) 
+import loader, write_out
 
-checkpoints = {"fake_real": '1000/', "kaggle": '1500/', "liar": '2500/'}
-
-metric = evaluate.combine(["accuracy", "f1", "precision", "recall"])
+all_models = ["bert-base-uncased", "roberta-base", "distilbert-base-uncased", "google/electra-base-discriminator"]
 
 def predict(row):
     tokenized_text = tokenizer(row['text'], truncation=True,  return_tensors="pt")
     outputs = model(**tokenized_text)
     predicted_class = outputs.logits.argmax().item()
 
-    return predicted_class
-    
+    return predicted_class    
 
 if __name__ == "__main__":
-    tqdm.pandas()
+    mode = "text"
+    data = loader.load_eval("data/original", "data/clean/test")
+    metric = evaluate.combine(["accuracy", "f1", "precision", "recall"])
 
-    data = loader.load_eval()
+    for model_name in all_models:
+        print(f"CURRENTLY EVALUATING: {model_name}")
+        print("------------------------------------------------------------------------")
 
-    res = {}
+        for name in os.listdir("data/original"):
+            try:
+                files = os.listdir(f"models/{mode}/{model_name}/{name}") 
+            except FileNotFoundError:
+                pass
 
-    for name in os.listdir("data/original"):
-        checkpoint = checkpoints[name]
-        path = f"./models/text/{model_name}/{name}/checkpoint-" + checkpoint
+            # Get highest checkpoint
+            checkpoint_files = [f for f in files if f.startswith("checkpoint")]
+            sorted_checkpoint_files = sorted(checkpoint_files, key=lambda x: int(x.split("-")[1]), reverse=True)
+            highest_checkpoint = sorted_checkpoint_files[0]
 
-        model = AutoModelForSequenceClassification.from_pretrained(path)
-        
-        df = pd.read_csv(f"data/clean/test/{name}.csv")
+            res = {}
+            print(f"PREDICTIONS FOR {name}")
+            print("------------------------------------------------------------------------")
 
-        print(f"Data: {name}, {len(df)}")
-        print("------------------------------------")
+            model_path = f"./models/text/{model_name}/{name}/checkpoint-" + highest_checkpoint
 
-        gold_labels = df["label"].values
-        df.drop("label", axis=1, inplace=True)
+            if model_name == "google/electra-base-discriminator":
+                tokenizer = ElectraTokenizer.from_pretrained(model_path, padding=256)
+                model = ElectraForSequenceClassification.from_pretrained(model_path)
+            else:
+                tokenizer = AutoTokenizer.from_pretrained(model_path, padding=256)
+                model = AutoModelForSequenceClassification.from_pretrained(model_path)
 
-        df["prediction"] = df.progress_apply(lambda row: predict(row), axis=1)
-        predictions = df["prediction"].values
+            df = pd.read_csv(f"data/clean/test/{name}.csv")
 
-        results = metric.compute(predictions=predictions, references=gold_labels)
+            gold_labels = df["label"].values
+            df.drop("label", axis=1, inplace=True)
 
-        res[name] = results
+            df["prediction"] = df.apply(lambda row: predict(row), axis=1)
+            predictions = df["prediction"].values
 
-    output = pd.DataFrame.from_dict(res)
-    print(output)
-    output.to_excel("RESULTS.xlsx")
-    output.to_csv("RESULTS.xlsx")
+            results = metric.compute(predictions=predictions, references=gold_labels)
+
+            res[name] = results
+
+        output = pd.DataFrame.from_dict(res)
+
+        write_out.write_data(output, "results/predictions")
