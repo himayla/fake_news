@@ -46,40 +46,6 @@ def load_data(original_dir, clean_dir, limit=None):
                 test.to_csv(f"{clean_dir}/{name}/test.csv",  columns=["text", "label"], index_label="ID")
                 validation.to_csv(f"{clean_dir}/{name}/validation.csv",  columns=["text", "label"], index_label="ID")
 
-def load_data_text(path_to_original, path_to_clean ):
-    data = {}
-    for name in os.listdir(f"{path_to_original}"):
-        print(f"MODE: TEXT")
-        print("------------------------------------------------------------------------")
-
-        if os.path.exists(f"data/clean/text/{name}.csv"):
-            print(f"LOAD CLEAN DATASET: {name}")
-            print("------------------------------------------------------------------------")
-            if name == "kaggle":
-                df = pd.read_csv(f"data/clean/text/kaggle.csv")# CAPPED AT 4.000
-            else:
-                df = pd.read_csv(f"data/clean/text/{name}.csv")
-        else:
-            print(f"CLEANING DATASET: {name}")
-            print(f"MODE: TXT")
-            print("------------------------------------------------------------------------")
-
-            if name == "fake_real":
-                df = load_fake(f"{path_to_original}/{name}/{name}.csv")
-            elif name == "liar":
-                df = load_liar(f"{path_to_original}/{name}")
-            elif name == "kaggle":
-                df = load_kaggle(f"{path_to_original}/{name}")
-
-            df.loc[:,"text"] = df.apply(lambda x: cleaner.prep_text_based(x["text"]), axis=1)
-            train, test = train_test_split(df, test_size=0.3)
-
-            write_out.write_data(train, f"{path_to_clean}/text/{name}", cols=["text", "label"], tsv=True)
-            write_out.write_data(test, f"{path_to_clean}/test/{name}", cols=["text", "label"], tsv=True)
-
-        data[name] = train
-    return data
-
 def load_fake(path):
     # Load Fake and Real News dataset by Mcintire
     fake_real = pd.read_csv(path)
@@ -169,5 +135,5 @@ if __name__ == "__main__":
     #     load_data(original_dir="data", clean_dir="pipeline/text-based/data", limit=int(sys.argv[1]))
     #     load_data(original_dir="data", clean_dir="pipeline/argumentation-based/data", limit=int(sys.argv[1]))
     # else:
-    load_data(original_dir="data", clean_dir="pipeline/text-based/data")
+    #load_data(original_dir="data", clean_dir="pipeline/text-based/data")
     load_data(original_dir="data", clean_dir="pipeline/argumentation-based/data")
