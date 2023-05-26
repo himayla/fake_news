@@ -8,12 +8,13 @@ import evaluate
 import numpy as np
 import os
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, ElectraTokenizer, ElectraForSequenceClassification
-from transformers import TrainingArguments, Trainer, DataCollatorWithPadding
+from transformers import EarlyStoppingCallback, TrainingArguments, Trainer, DataCollatorWithPadding
 import sys
 from torch.utils.tensorboard import SummaryWriter
 import pandas as pd
 # import loader
 import torch
+import torch.nn as nn
 #from transformers import AdamW
 
 import argparse
@@ -28,6 +29,16 @@ def compute_metrics(eval_pred):
     predictions = np.argmax(predictions, axis=1)
     metrics = metric.compute(predictions=predictions, references=labels)
     return metrics
+
+def compute_loss(self, model, inputs, return_outputs=False):
+    labels = inputs.get("labels")
+    # forward pass
+    outputs = model(**inputs)
+    logits = outputs.get("logits")
+
+    loss_fct = nn.CrossEntropyLoss()
+    loss = loss_fct(logits.view(-1, 2), labels.view(-1))
+    return (loss, outputs) if return_outputs else loss
 
 if __name__ == "__main__":
     print("LOAD DATA")
@@ -56,8 +67,8 @@ if __name__ == "__main__":
         dir = f"pipeline/{mode}/data"
         for name in os.listdir(dir):
             if os.path.isdir(f"{dir}/{name}"):
-                train = pd.read_csv(f"{dir}/{name}/train_400.csv")
-                test = pd.read_csv(f"{dir}/{name}/test_400.csv")
+                train = pd.read_csv(f"{dir}/{name}/train.csv").dropna()
+                test = pd.read_csv(f"{dir}/{name}/test.csv").dropna()
                 # try:
                 #     # Load checkpoint
                 #     files = os.listdir(f"models/{mode}/{model_name}/{name}")
@@ -83,6 +94,8 @@ if __name__ == "__main__":
                 train = Dataset.from_pandas(train).class_encode_column("label")
                 test = Dataset.from_pandas(test).class_encode_column("label")
 
+                print(train, test)
+
                 tokenized_train = train.map(preprocess_function, batched=True)
                 tokenized_test = train.map(preprocess_function, batched=True)
 
@@ -92,19 +105,22 @@ if __name__ == "__main__":
                 training_args = TrainingArguments(
                     output_dir=f"models/{mode}/{model_name}/{name}",  # Directory where model checkpoints and logs will be saved
                     per_device_train_batch_size=32,  # Batch size for training
-                    evaluation_strategy="steps",  # Evaluate the model after every epoch
+                    evaluation_strategy="epoch",  # Evaluate the model after every epoch
                     logging_strategy="epoch",  # Log training data stats for loss after every epoch
+                    save_strategy="epoch",
                     learning_rate=4e-5,  # Learning rate for the optimizer
-                    num_train_epochs=2,  # Number of training epochs
+                    optim="adamw_torch",
+                    num_train_epochs=10,
                     logging_dir=f"models/{mode}/{model_name}/{name}/logs",  # Directory where training logs will be saved
                     report_to="tensorboard",
                     save_total_limit=5,  # Limit the total number of saved checkpoints
-                    #early_stopping_patience=3,  # Stop training if the evaluation metric does not improve for this many evaluations
                     adam_epsilon=1e-8,  # Epsilon value for Adam optimizer
                     load_best_model_at_end=True,  # Load the best model at the end of training
                     metric_for_best_model="eval_loss",  # Metric to monitor for determining the best model
-                    greater_is_better=False,  # Specify if a higher value of the metric is better or not
+                    greater_is_better=False  # Specify if a higher value of the metric is better or not
                 )
+    
+                early_stop = EarlyStoppingCallback(1, 0) # Zero because delta
 
                 trainer = Trainer(
                     model=model,
@@ -113,6 +129,8 @@ if __name__ == "__main__":
                     train_dataset=tokenized_train,
                     eval_dataset=tokenized_test,
                     compute_metrics=compute_metrics,
+                    compute_loss=compute_loss,
+                    callbacks=[early_stop]
                     )
                 
                 writer = SummaryWriter(log_dir=training_args.logging_dir)
@@ -122,3 +140,6 @@ if __name__ == "__main__":
                 trainer.save_model()
                 trainer.evaluate()
                 writer.close()
+                print("------------------------------------------------------------------------")
+                print()
+
