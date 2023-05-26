@@ -12,16 +12,13 @@ from transformers import TrainingArguments, Trainer, DataCollatorWithPadding
 import sys
 from torch.utils.tensorboard import SummaryWriter
 import pandas as pd
-import loader
+# import loader
 import torch
 #from transformers import AdamW
 
 import argparse
 
-
-
 all_models = ["bert-base-uncased", "roberta-base", "distilbert-base-uncased", "google/electra-base-discriminator"]
-# mode = sys.argv[2]
 
 def preprocess_function(news):
     return tokenizer(news["text"], truncation=True)
@@ -56,11 +53,11 @@ if __name__ == "__main__":
         print(f"TRAINING: {model_name} - START: {current_time.hour}:{current_time.minute}")
         print("------------------------------------------------------------------------")
 
-        dir = f"pipeline/{mode}/data/"
+        dir = f"pipeline/{mode}/data"
         for name in os.listdir(dir):
             if os.path.isdir(f"{dir}/{name}"):
-                train = pd.read_csv(f"{dir}/{name}/train.csv")
-                test = pd.read_csv(f"{dir}/{name}/test.csv")
+                train = pd.read_csv(f"{dir}/{name}/train_400.csv")
+                test = pd.read_csv(f"{dir}/{name}/test_400.csv")
                 # try:
                 #     # Load checkpoint
                 #     files = os.listdir(f"models/{mode}/{model_name}/{name}")
@@ -98,7 +95,7 @@ if __name__ == "__main__":
                     evaluation_strategy="steps",  # Evaluate the model after every epoch
                     logging_strategy="epoch",  # Log training data stats for loss after every epoch
                     learning_rate=4e-5,  # Learning rate for the optimizer
-                    num_train_epochs=10,  # Number of training epochs
+                    num_train_epochs=2,  # Number of training epochs
                     logging_dir=f"models/{mode}/{model_name}/{name}/logs",  # Directory where training logs will be saved
                     report_to="tensorboard",
                     save_total_limit=5,  # Limit the total number of saved checkpoints
