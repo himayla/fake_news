@@ -5,7 +5,9 @@ from allennlp.data import Vocabulary, TextFieldTensors
 from allennlp.models import Model
 from allennlp.modules import TextFieldEmbedder, Seq2VecEncoder
 from allennlp.nn import util
-from allennlp.training.metrics import CategoricalAccuracy
+from allennlp.training.metrics import CategoricalAccuracy, F1Measure
+import numpy as np
+#from allennlp.training.metrics.fbeta_measure import FBetaMeasure
 
 @Model.register("LSTM_Classifier")
 class LSTM_Classifier(Model):
@@ -17,7 +19,13 @@ class LSTM_Classifier(Model):
         self.encoder = encoder
         num_labels = vocab.get_vocab_size("labels")
         self.classifier = torch.nn.Linear(encoder.get_output_dim(), num_labels)
-        self.accuracy = CategoricalAccuracy()
+        #self.accuracy = CategoricalAccuracy()
+       # self.f1 = FBetaMeasure()
+        self.metrics = {
+            "accuracy": CategoricalAccuracy(),
+            "f1" : F1Measure(positive_label=1)
+        }
+
 
     def forward(  # type: ignore
         self, text: TextFieldTensors, label: torch.Tensor = None
@@ -35,9 +43,32 @@ class LSTM_Classifier(Model):
         # Shape: (1,)
         output = {"probs": probs}
         if label is not None:
-            self.accuracy(logits, label)
+            self.metrics["accuracy"](logits, label)
+            self.metrics["f1"](logits, label)
             output["loss"] = torch.nn.functional.cross_entropy(logits, label)
-        return output
 
+        #self._f1(logits, label)
+
+        return output
+        
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
-        return {"accuracy": self.accuracy.get_metric(reset)}
+        accuracy = self.metrics["accuracy"].get_metric(reset=reset)
+        metr = self.metrics["f1"].get_metric(reset=reset)
+
+        metrics = {
+            "accuracy": accuracy,
+            "precision": metr['precision'], #if precision is not None and not isinstance(precision, str) else 0.0,
+            "recall": metr['recall'],# if recall is not None and not isinstance(recall, str) else 0.0,
+            "f1": metr['f1'] #if f1 is not None and not isinstance(f1, str) else 0.0,
+        }
+
+        return metrics
+
+        # metric = super().get_metric(reset=reset)
+        # # Because we just care about the class `positive_label`
+        # # there is just one item in `precision`, `recall`, `fscore`
+        # precision = metric["precision"][0]
+        # recall = metric["recall"][0]
+        # f1 = metric["fscore"][0]
+        # accuracy = self.accuracy.get_metric(reset)
+        # return {"precision": precision, "recall": recall, "f1": f1, "accuracy":accuracy}

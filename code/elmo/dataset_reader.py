@@ -7,14 +7,13 @@ from allennlp.data.fields import LabelField, TextField
 from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer
 from allennlp.data.tokenizers import Tokenizer, WhitespaceTokenizer
 
-
 @DatasetReader.register("classification-csv")
-class ClassificationTsvReader(DatasetReader):
+class ClassificationCsvReader(DatasetReader):
     def __init__(
         self,
         tokenizer: Tokenizer = None,
         token_indexers: Dict[str, TokenIndexer] = None,
-        max_tokens: int = None,
+        max_tokens: int = 300,
         **kwargs
     ):
         super().__init__(**kwargs)
@@ -32,17 +31,6 @@ class ClassificationTsvReader(DatasetReader):
             fields["label"] = LabelField(label)
         return Instance(fields)
 
-    def _read(self, file_path: str) -> Iterable[Instance]:
-        print(file_path)
-        with open(file_path, "r") as lines:
-            next(lines) # Skip header
-            for line in lines:
-                #print(line)
-                # TODO: Ideally, the output label would be optional when we create the Instances, 
-                # so that we can use the same code to make predictions on unlabeled data
-                try: 
-                    id, text, label = line.split("\t")
-                except ValueError:
-                    print(line)
-                #     pass
-                yield self.text_to_instance(text, label)
+    def _read(self, df) -> Iterable[Instance]:
+        for i in range(len(df)):
+            yield self.text_to_instance(df.iloc[i, 1], df.iloc[i, 2])

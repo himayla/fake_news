@@ -13,21 +13,17 @@ from allennlp.training import GradientDescentTrainer
 from allennlp.training.optimizers import AdamOptimizer
 from itertools import chain
 from typing import Tuple
-import sys
 import os
-from dataset_reader import ClassificationTsvReader
+from dataset_reader import ClassificationCsvReader
 from model import LSTM_Classifier
-
-path = os.path.abspath("/home/mkersten/fake_news/code")
-sys.path.append(path)
-
-import loader
-
-mode = sys.argv[1]
+import argparse
+import torch
+import pandas as pd
+from allennlp.training.callbacks import TensorBoardCallback
 
 def build_dataset_reader() -> DatasetReader:
     elmo_token_indexer = ELMoTokenCharactersIndexer()
-    reader = ClassificationTsvReader(token_indexers={"tokens": elmo_token_indexer})
+    reader = ClassificationCsvReader(token_indexers={"tokens": elmo_token_indexer})
     return reader
 
 def build_vocab(train_loader, dev_loader) -> Vocabulary:
@@ -66,64 +62,77 @@ def build_data_loaders(
 
 def build_trainer(
     model: Model,
-    serialization_dir: str,
     train_loader: DataLoader,
-    dev_loader: DataLoader) -> Trainer:
-    parameters = [(n, p) for n, p in model.named_parameters() if p.requires_grad]
-    optimizer = AdamOptimizer(parameters)  # type: ignore
+    dev_loader: DataLoader,
+    callbacks: list,
+    name: str) -> Trainer:
+
     
-    # There are a *lot* of other things you could configure with the trainer.  See
-    # http://docs.allennlp.org/master/api/training/trainer/#gradientdescenttrainer-objects for more
-    # information.
+    parameters = [(n, p) for n, p in model.named_parameters() if p.requires_grad]
+    optimizer = AdamOptimizer(parameters)
+    
+    model = model.to("cuda")
 
     trainer = GradientDescentTrainer(
         model=model,
-        serialization_dir=serialization_dir,
+        serialization_dir=f"models/{mode}/elmo/{name}",
         data_loader=train_loader,
         validation_data_loader=dev_loader,
         num_epochs=10,
         optimizer=optimizer,
-        validation_metric="+accuracy",
+        validation_metric="-loss",
+        callbacks=callbacks,
+        patience=1
     )
     return trainer
 
 
-def run_training_loop(serialization_dir: str, name: str):
-    reader = build_dataset_reader()
-
-    train_data = f"data/clean/{mode}/{name}.tsv"
-    test_data = f"data/clean/test/{name}.tsv"
-
-    train_loader, dev_loader = build_data_loaders(
-        reader, train_data, test_data
-    )
-
-    vocab = build_vocab(train_loader, dev_loader)
-    model = build_model(vocab)
-
-    # This is the allennlp-specific functionality in the Dataset object;
-    # we need to be able convert strings in the data to integers, and this
-    # is how we do it.
-    train_loader.index_with(vocab)
-    dev_loader.index_with(vocab)
-
-    trainer = build_trainer(model, serialization_dir, train_loader, dev_loader)
-
-    # NOTE: Training using multiple GPUs is hard in this setting.  If you want multi-GPU training,
-    # we recommend using our config file template instead, which handles this case better, as well
-    # as saving the model in a way that it can be easily loaded later.  If you really want to use
-    # your own python script with distributed training, have a look at the code for the allennlp
-    # train command (https://github.com/allenai/allennlp/blob/master/allennlp/commands/train.py),
-    # which is where we handle distributed training.  Also, let us know on github that you want
-    # this; we could refactor things to make this usage much easier, if there's enough interest.
-
-    print("Starting training")
-    trainer.train()
-    print("Finished training")
-
 if __name__ == "__main__":
-    # data = loader.load_data_text(f"data/original", "data/clean") # Uncomment if newer data
-    data = loader.load_tsv(f"data/clean/{mode}")
+    print(f"Is CUDA available: {torch.cuda.is_available()}")
+    # True
+    print(f"CUDA device: {torch.cuda.get_device_name(torch.cuda.current_device())}")
+    # Tesla T4
+    print("LOAD DATA")
+    print("------------------------------------------------------------------------\n")
 
-    for name, df in data.items():
-        run_training_loop(serialization_dir=f"results/{name}/", name=name)
+    parser = argparse.ArgumentParser(description="Training")
+    parser.add_argument('-m', '--mode', choices=['t', 'a'], help="Select mode: 't' for text-based, 'a' for argumentation-based")
+
+    args = parser.parse_args()
+
+    mode = args.mode
+
+    if mode == "t":
+        mode = "text-based"
+
+    print(f"MODE {mode}")
+    print("------------------------------------------------------------------------\n")
+
+    dir = f"pipeline/{mode}/data"
+    for name in os.listdir(dir):
+        if os.path.isdir(f"{dir}/{name}"):
+            reader = build_dataset_reader()
+
+            train = pd.read_csv(f"{dir}/{name}/train.csv").dropna()
+            test = pd.read_csv(f"{dir}/{name}/test.csv").dropna()
+            
+            train_loader, test_loader = build_data_loaders(
+                reader, train, test
+            )
+
+            vocab = build_vocab(train_loader, test_loader)
+            model = build_model(vocab)
+
+            train_loader.index_with(vocab)
+            test_loader.index_with(vocab)
+
+            tensorboard_callback = TensorBoardCallback(serialization_dir=f"models/{mode}/elmo/{name}/logs")
+
+            callbacks = [tensorboard_callback]
+
+            trainer = build_trainer(model, train_loader, test_loader, callbacks, name)
+
+
+            print("Starting training")
+            trainer.train()
+            print("Finished training")

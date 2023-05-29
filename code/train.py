@@ -15,7 +15,13 @@ import pandas as pd
 # import loader
 import torch
 import torch.nn as nn
+from pynvml import *
+
 #from transformers import AdamW
+print(f"Is CUDA available: {torch.cuda.is_available()}")
+# True
+print(f"CUDA device: {torch.cuda.get_device_name(torch.cuda.current_device())}")
+# Tesla T4
 
 import argparse
 
@@ -30,6 +36,17 @@ def compute_metrics(eval_pred):
     metrics = metric.compute(predictions=predictions, references=labels)
     return metrics
 
+def print_gpu_utilization():
+    nvmlInit()
+    handle = nvmlDeviceGetHandleByIndex(0)
+    info = nvmlDeviceGetMemoryInfo(handle)
+    print(f"GPU memory occupied: {info.used//1024**2} MB.")
+
+
+def print_summary(result):
+    print(f"Time: {result.metrics['train_runtime']:.2f}")
+    print(f"Samples/second: {result.metrics['train_samples_per_second']:.2f}")
+    print_gpu_utilization()
 
 if __name__ == "__main__":
     print("LOAD DATA")
@@ -80,20 +97,24 @@ if __name__ == "__main__":
                     if checkpoint_files:
                         sorted_checkpoint_files = sorted(checkpoint_files, key=lambda x: int(x.split("-")[1]), reverse=True)
                         highest_checkpoint = sorted_checkpoint_files[0]
-                        model_path = f"models/text/{model_name}/{name}/" + highest_checkpoint 
+                        model_path = f"models/text/{model_name}/{name}/" + highest_checkpoint
+                    else:
+                        model_path = model_name
                 except FileNotFoundError:
                     model_path = model_name
 
                 if model_name == "google/electra-base-discriminator":
-                    tokenizer = ElectraTokenizer.from_pretrained(model_name, padding=True, truncation=True, return_tensors="pt")
-                    model = ElectraForSequenceClassification.from_pretrained(f"{model_path}", num_labels=2, id2label={0: "FAKE", 1: "REAL"}, label2id={"FAKE": 0, "REAL": 1})
+                    tokenizer = ElectraTokenizer.from_pretrained(model_name, truncation=True, padding='max_length', max_length=300, return_tensors="pt")
+                    model = ElectraForSequenceClassification.from_pretrained(f"{model_path}", num_labels=2, id2label={0: "FAKE", 1: "REAL"}, label2id={"FAKE": 0, "REAL": 1}).to("cuda")
                 else:
-                    tokenizer = AutoTokenizer.from_pretrained(model_name, padding=True, truncation=True, return_tensors="pt") 
-                    model = AutoModelForSequenceClassification.from_pretrained(f"{model_path}", num_labels=2, id2label={0: "FAKE", 1: "REAL"}, label2id={"FAKE": 0, "REAL": 1})
+                    tokenizer = AutoTokenizer.from_pretrained(model_name, truncation=True, padding='max_length', max_length=300, return_tensors="pt") 
+                    model = AutoModelForSequenceClassification.from_pretrained(f"{model_path}", num_labels=2, id2label={0: "FAKE", 1: "REAL"}, label2id={"FAKE": 0, "REAL": 1}).to("cuda")
+                
+                print_gpu_utilization()
                 data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
                 tokenized_train = train.map(preprocess_function, batched=True)
-                tokenized_test = train.map(preprocess_function, batched=True)
+                tokenized_test = test.map(preprocess_function, batched=True)
 
                 # Documentation: https://huggingface.co/transformers/v3.0.2/main_classes/trainer.html
                 training_args = TrainingArguments(
@@ -111,7 +132,7 @@ if __name__ == "__main__":
                     adam_epsilon=1e-8,  # Epsilon value for Adam optimizer
                     load_best_model_at_end=True,  # Load the best model at the end of training
                     metric_for_best_model="eval_loss",  # Metric to monitor for determining the best model
-                    greater_is_better=False  # Specify if a higher value of the metric is better or not
+                    greater_is_better=False,  # Specify if a higher value of the metric is better or not
                 )
     
                 early_stop = EarlyStoppingCallback(1, 0) # Zero because delta
@@ -140,7 +161,8 @@ if __name__ == "__main__":
                 writer = SummaryWriter(log_dir=training_args.logging_dir)
 
                 print("START TRAINING")
-                trainer.train()
+                result = trainer.train()
+                print_summary(result)
                 trainer.save_model()
                 trainer.evaluate()
                 writer.close()
