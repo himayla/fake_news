@@ -126,7 +126,7 @@ if __name__ == "__main__":
             train_loader.index_with(vocab)
             test_loader.index_with(vocab)
 
-            tensorboard_callback = TensorBoardCallback(serialization_dir=f"models/{mode}/elmo/{name}/logs")
+            tensorboard_callback = TensorBoardCallback(serialization_dir=f"models/{mode}/elmo/{name}")
 
             callbacks = [tensorboard_callback]
 
