@@ -1,4 +1,6 @@
+import sklearn; print(sklearn.__version__)
 from sklearn.model_selection import train_test_split
+# from sklearn.cross_validation import train_test_split
 import pandas as pd
 import os
 import sys
@@ -8,6 +10,7 @@ import cleaner
 def load_data(original_dir, clean_dir, limit=None):
     for name in os.listdir(f"{original_dir}"):
         if not name == ".DS_Store":
+            print(f"{clean_dir}/{name}")
             if os.path.exists(f"{clean_dir}/{name}"):
                 print(f"LOAD CLEAN DATASET: {name}")
                 print("------------------------------------------------------------------------")
@@ -41,7 +44,8 @@ def load_data(original_dir, clean_dir, limit=None):
 
                 if not os.path.exists(f"{clean_dir}/{name}"):
                     os.makedirs(f"{clean_dir}/{name}")
-
+                
+                print(f"{clean_dir}/{name}")
                 train.to_csv(f"{clean_dir}/{name}/train.csv", columns=["text", "label"], index_label="ID")
                 test.to_csv(f"{clean_dir}/{name}/test.csv",  columns=["text", "label"], index_label="ID")
                 validation.to_csv(f"{clean_dir}/{name}/validation.csv",  columns=["text", "label"], index_label="ID")
@@ -86,10 +90,10 @@ def load_liar(path):
 
 def load_kaggle(path):
     # !!!! Important: capped at 2.000
-    df_real = pd.read_csv(f"{path}/True.csv", nrows=1000)
+    df_real = pd.read_csv(f"{path}/True.csv", nrows=200)
     df_real["label"] = "REAL"
 
-    df_fake = pd.read_csv(f"{path}/Fake.csv", nrows=1000)
+    df_fake = pd.read_csv(f"{path}/Fake.csv", nrows=200)
     df_fake["label"] = "FAKE"
 
     kaggle = pd.concat([df_real, df_fake], ignore_index=True)
@@ -136,4 +140,4 @@ if __name__ == "__main__":
     #     load_data(original_dir="data", clean_dir="pipeline/argumentation-based/data", limit=int(sys.argv[1]))
     # else:
     #load_data(original_dir="data", clean_dir="pipeline/text-based/data")
-    load_data(original_dir="data", clean_dir="pipeline/argumentation-based/data")
+    load_data(original_dir="data", clean_dir="./pipeline/argumentation-based/data")
