@@ -1,0 +1,143 @@
+,ID,text,label,claim,evidence
+3,88,"WASHINGTON( Reuters) - A coalition of nearly 20 environmental and Native American tribal groups sued the Trump administration on Tuesday, challenging its delay of a rule limiting emissions of the powerful greenhouse gas methane from oil and gas drilling operations on federal lands. Earlier this month, the Bureau of Land Management, part of the Department of the Interior, suspended implementation of the rule for a year, until Jan. 17, 2019, saying it wanted to avoid compliance costs for energy companies as it revises the regulation. The delay “ is yet another action taken by the Trump administration to benefit the oil and gas industry at the expense of the American public, particularly the millions of Westerners ” who use public lands for ranching, hunting, hiking and other purposes, Darin Schroeder, a lawyer with the Clean Air Task Force, said in a statement. His organization represented the National Wildlife Federation, one of the groups that filed the lawsuit against Interior Secretary Ryan Zinke and his department. Energy companies say the rule, finalized at the end of the Obama administration in 2016, could cost them tens of thousands of dollars per well. The Trump administration is expected to announce a new draft rule in coming weeks, in line with its policy of maximizing output of oil, gas and coal and dismantling regulations it says prevent job growth. The rule targets accidental leaks and intentional venting of methane from drilling operations on public lands, where about 9 percent of the country ’ s natural gas and 5 percent of its oil were produced last fiscal year. Some of its 2017 provisions have already been phased in, but the majority of them have yet to go into effect. The lawsuit, also filed by the Sierra Club, the Environmental Defense Council, and the Diné Citizens Against Ruining Our Environment, a Navajo group, seeks to stop the delay and force the Interior Department to implement the rule in January. It was filed in the U.S. District Court for the Northern District of California in San Francisco. The Interior Department did not immediately respond to a request for comment on the lawsuit.",REAL,"{
+  ""type"": ""CodeAction"",
+  ""id"": ""2"",
+  ""text"": ""claim(s):"",
+  ""status"": ""RUNNING"",
+  ""created_at"": ""2020-07-11T10:19:14.133Z"",
+  ""updated_at"": ""2020-07-25T13:06:12.079Z"",
+  ""reporter"": ""Kevin Krewach"",
+  ""assigned_to"": ""Seth Cancel"",
+  ""work_id"": ""WI_252020c"",
+  ""claim"": [
+    {
+      ""type"": ""claim"",
+      ""id"": ""1"",
+      ""text"": ""The Trump administration has delayed a rule limiting emissions of the powerful greenhouse gas methane from oil and gas drilling operations on federal lands, an environmental coalition said on Tuesday.""
+    },
+    {
+      ""type"": ""claim"",
+      ""id"": ""2"",
+      ""text"": ""A coalition of nearly 20 environmental and Native American tribal groups sued the Trump administration on Tuesday, challenging its delay of a rule limiting emissions of the powerful greenhouse gas methane from oil and gas drilling operations on.[
+  {
+    ""claim"": ""The Bureau of Land Management, part of the Department of the Interior, suspended implementation of the rule for a year, until Jan. 17, 2019, saying it wanted to avoid compliance costs for energy companies as it revises the regulation...""
+  }
+].{
+  ""claims"": [
+    {
+      ""claim"": ""NONE""
+    }
+  ]
+}.[
+  {
+    ""claim"": ""NONE""
+  }
+].[
+  {
+    ""claim"": ""The price of oil has decreased substantially since the beginning of the Obama administration.""
+  },
+  {
+    ""claim"": ""The oil and gas industry has spent more than $500 million on lobbying and political campaign contributions since the administration finalized the rule in 2016.""
+  },
+  {
+    ""claim"": ""The oil and gas industry has estimated it could lose tens of thousands of dollars per well due to the rule.""
+  }
+].[
+  {
+    ""claim"": ""The Trump administration is expected to announce a new draft rule in coming weeks, in line with its policy of maximizing output of oil, gas and coal and dismantling regulations it says prevent job growth.""
+  }
+].{
+  ""claim"": [
+    ""9%"",
+    ""5%"",
+    ""NONE""
+  ]
+}.{
+  ""claim"": ""NONE""
+}.{
+  ""Sierra Club"": {
+    ""Plaintiff"": ""true"",
+    ""EDC"": ""true"",
+    ""Navajo"": ""true"",
+    ""Environmental Defense Council"": ""false""
+  },
+  ""The lawsuit, also filed by the Sierra Club, the Environmental Defense Council, and the Diné Citizens Against Ruining Our Environment, a Navajo group, seeks to stop the delay and force the Interior Department to implement the rule in January..."": {
+    ""claim"": ""force the Interior Department to implement the rule in January..."",
+    ""NONE"": ""NONE""
+  }
+}.{
+  ""claim"": ""NONE""
+}","The groups include the National Wildlife Federation, one of the plaintiffs. The rule, finalized at the end of the Obama administration in 2016, could cost them tens of thousands of dollars per well."
+4,120,"WASHINGTON( Reuters) - U.S. Representative Ruben Kihuen announced on Saturday that he will not seek re-election, becoming the latest member of Congress to end his legislative career in the face of sexual harassment allegations. The first-term Nevada Democrat, who is the subject of an ethics investigation in the House of Representatives, denied the allegations against him but concluded that the charges would distract from “ a fair and thorough discussion of the issues ” on the campaign trail. “ It is in the best interests of my family and my constituents to complete my term in Congress and not seek reelection, ” Kihuen, 37, said in a statement issued by his campaign committee. The news website BuzzFeed has reported allegations that Kihuen sexually harassed a staff member of his 2016 political campaign. This week, there were also multiple reports of an anonymous lobbyist ’ s description of his unwanted advances. Reuters has not independently confirmed the reports. Kihuen is the latest in a growing roster of male lawmakers in Congress who have been accused of sexual misconduct amid a wave of such allegations against powerful men in entertainment, politics and the media. Lawmakers are working on legislation to update the body ’ s rules on sexual harassment. On Friday, Democratic Representative Bobby Scott of Virginia was accused of touching a former aide without permission and offering to advance her career in exchange for sex. The aide also said she was wrongfully dismissed from her job. Scott denied the charges. Republican Representative Blake Farenthold also said this week that he would not seek re-election after accounts surfaced that he created a hostile work environment. He denied allegations of sexual harassment but admitted allowing an unprofessional culture in his Capitol Hill office. Last week, Democratic Representative John Conyers and Republican Representative Trent Franks resigned, while Democratic Senator Al Franken said he would step down in the coming weeks.",REAL,"{""statement"": ""Ruben Kihuen announced on Saturday that he will not seek re-election, becoming the latest member of Congress to end his legislative career in the face of sexual harassment allegations."", ""claim"": ""Ruben Kihuen will not seek re-election."", ""detail"": ""U.S. Representative Ruben Kihuen announced on Saturday that he will not seek re-election, becoming the latest member of Congress to end his legislative career in the face of sexual harassment allegations."", ""clarification"": ""U.S. Representative Ruben Kihuen did not say he would not seek re-election, but instead that he would not continue to serve while allegations of sexual harassment were being adjudicated. Kihuen is one of at least 23 members of Congress who have faced accusations of sexual misconduct since the #MeToo movement emerged in the summer of 2017. Congressional officials have said there is no timetable for bringing any sexual misconduct charges against Kihuen. Kihuen has denied the allegations against him, and has not resigned. His office did not respond to requests for comment."", ""source"": ""Reuters""}.{
+  ""claims"": [
+    {
+      ""key"": ""NONE"",
+      ""text"": ""The first-term Nevada Democrat, who is the subject of an ethics investigation in the House of Representatives, denied the allegations against him but concluded that the charges would distract from \"" a fair and thorough discussion of the issues \"" on the campaign trail.""
+    }
+  ]
+}.{
+  ""claim"": [
+    {
+      ""type"": ""Fact"",
+      ""sources"": [
+        {
+          ""type"": ""Wikipedia"",
+          ""url"": ""http://en.wikipedia.org/wiki/Joseph_F._Kihuen""
+        }
+      ],
+      ""text"": ""Joseph F. Kihuen is a member of the Democratic Party who represents California's 21st congressional district, which encompasses part of the Inland Southern California area including Madera and Fresno counties. Kihuen previously represented the 4th congressional district from 2013 to 2017, and his district included part of the Inland San Joaquin Valley and the Imperial County area including Prattville. Kihuen is the son of the late Ernest F. Kihuen and the late Rosie F. Kihuen, and the brother of incumbent Member of the California State Assembly Miguel Cabrera Kihuen, Jr.""
+    }
+  ]
+}.{
+  ""claims"" : [
+    {
+      ""claim"" : ""The news website BuzzFeed has reported allegations that Kihuen sexually harassed a staff member of his 2016 political campaign. This week, there were also multiple reports of an anonymous lobbyist ’ s description of his unwanted advances. Reuters has not independently confirmed the reports..."",
+      ""url"" : ""http://www.buzzfeed.com/jenniferbrescher/sen-kirsten-nixons-2016-kihuen-accuser-speaks-out"",
+      ""reference"" : ""http://www.buzzfeed.com/jenniferbrescher/sen-kirsten-nixons-2016-kihuen-accuser-speaks-out""
+    },
+    {
+      ""claim"" : ""Multiple reports of an anonymous lobbyist's description of his unwanted advances."",
+      ""url"" : ""https://www.reuters.com/article/us-lobbying-desiree-foley/anonymous-lobbyist-gives-description-of-harassment-at-enron-abuse-probe-idUSKBN.{
+	""claims"": [
+		{
+			""claim"": ""Kihuen is the latest in a growing roster of male lawmakers in Congress who have been accused of sexual misconduct amid a wave of such allegations against powerful men in entertainment, politics and the media..""
+		}
+	]
+}.{
+  ""kind"": "" Lawsuit "",
+  ""id"": ""AB_2018_9350"",
+  ""claim"": [
+    {
+      ""text"": ""On Friday, Democratic Representative Bobby Scott of Virginia was accused of touching a former aide without permission and offering to advance her career in exchange for sex."",
+      ""level"": ""Warning"",
+      ""severity"": ""medium"",
+      ""source"": ""New York Times"",
+      ""notificationType"": ""warning"",
+      ""lastUpdate"": ""now""
+    }
+  ],
+  ""status"": ""NONE""
+}.[
+  {
+    ""claim"": ""Scott denied the charges."",
+    ""Republican Representative Blake Farenthold also said this week that he would not seek re-election after accounts surfaced that he created a hostile work environment.""
+  },
+  {
+    ""claim"": ""NONE"",
+    ""Republican Representative Blake Farenthold also said this week that he would not seek re-election after accounts surfaced that he created a hostile work environment.""
+  }
+].{
+  ""claims"": [
+    {
+      ""claim"": ""He denied allegations of sexual harassment but admitted allowing an unprofessional culture in his Capitol Hill office. Last week, Democratic Representative John Conyers and Republican Representative Trent Franks resigned, while Democratic Senator Al Franken said he would step down in the coming weeks""
+    },
+    {
+      ""claim"": ""He denied allegations of sexual harassment but admitted allowing an unprofessional culture in his Capitol Hill office. Last week, Democratic Representative John Conyers and Republican Representative Trent Franks resigned, while Democratic Senator Al Franken said he would step down in the coming weeks""
+    }
+  ]
+}","( Reuters )
+Ruben Kihuen (Nevada) announced on Saturday, that he will not seek re-election, becoming the latest member of Congress to end his legislative career in the face of sexual harassment allegations. The first-term Nevada Democrat, who is the subject of an ethics investigation in the House of Representatives, denied the allegations against him but concluded that the charges would distract from ""a fair and thorough discussion of the issues"" on the campaign trail.
+
+""It is in the best interests of my family and my constituents to complete my term in Congress and not seek reelection, "" Kihuen, 37, said in a statement issued by his campaign committee.
+
+The news website BuzzFeed has reported allegations that Kihuen sexually harassed a staff member of his 2016 political campaign. This week, there were also multiple reports of an anonymous lobbyist's description of his unwanted advances. Reuters has not independently confirmed the reports."
