@@ -17,7 +17,6 @@ import torch
 import torch.nn as nn
 from pynvml import *
 
-#from transformers import AdamW
 print(f"Is CUDA available: {torch.cuda.is_available()}")
 # True
 print(f"CUDA device: {torch.cuda.get_device_name(torch.cuda.current_device())}")
@@ -28,7 +27,11 @@ import argparse
 all_models = ["bert-base-uncased", "roberta-base", "distilbert-base-uncased", "google/electra-base-discriminator"]
 
 def preprocess_function(news):
-    return tokenizer(news["text"], truncation=True)
+    if mode == "argumentation-based":
+        return tokenizer(news["structure"], truncation=True)
+    else:
+        return tokenizer(news["text"], truncation=True)
+
 
 def compute_metrics(eval_pred): 
     predictions, labels = eval_pred
@@ -61,6 +64,14 @@ if __name__ == "__main__":
 
     if args.mode == "t":
         mode = "text-based"
+        dir = f"pipeline/{mode}/data"
+    elif args.mode == "margot":
+        mode = "argumentation-based"
+        dir = f"pipeline/{mode}/argumentation structure/margot" # NOW ONLY MARGOT, NOT DOLLY
+    elif args.mode == "dolly":
+        mode = "argumentation-based"
+        dir = f"pipeline/{mode}/argumentation structure/dolly" # NOW ONLY MARGOT, NOT DOLLY
+
 
     print(f"MODE {mode}")
     print("------------------------------------------------------------------------\n")
@@ -73,11 +84,11 @@ if __name__ == "__main__":
         print(f"TRAINING: {model_name} - START: {current_time.hour}:{current_time.minute}")
         print("------------------------------------------------------------------------\n")
 
-        dir = f"pipeline/{mode}/data"
+
         for name in os.listdir(dir):
             if os.path.isdir(f"{dir}/{name}"):
-                train = pd.read_csv(f"{dir}/{name}/train.csv").dropna()
-                test = pd.read_csv(f"{dir}/{name}/test.csv").dropna()
+                train = pd.read_csv(f"{dir}/{name}/train.csv").dropna()[:5]
+                test = pd.read_csv(f"{dir}/{name}/test.csv").dropna()[:5]
 
                 print(f"DATASET: {name} - LENGTH TRAIN: {len(train)}")
                 print("------------------------------------------------------------------------\n")
@@ -91,7 +102,6 @@ if __name__ == "__main__":
                 print("------------------------------------------------------------------------\n")
 
                 try:
-                    # Load checkpoint
                     files = os.listdir(f"models/{mode}/{model_name}/{name}")
                     checkpoint_files = [f for f in files if f.startswith("checkpoint")]
                     if checkpoint_files:

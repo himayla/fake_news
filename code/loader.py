@@ -108,7 +108,16 @@ def load_kaggle(path):
   
     return kaggle
 
-def load_annotated(path_to_annotated, path_to_original):
+def rejoin_data(path_to_annotated: str, 
+                path_to_original: str) -> None:
+    """
+        Helper function for argumentation based classifier.
+        Function combines annotated files to original files.
+        Args:
+            path_to_annotated (str): Location of files after annotations
+            path_to_original (str): Location of files before annotating 
+
+    """
     data = {}
     for file in os.listdir(path_to_annotated):
         if file.endswith(".csv"):
@@ -135,9 +144,8 @@ def load_annotated(path_to_annotated, path_to_original):
     return data
 
 if __name__ == "__main__":
-    # if sys.argv[1] is not None:
-    #     load_data(original_dir="data", clean_dir="pipeline/text-based/data", limit=int(sys.argv[1]))
-    #     load_data(original_dir="data", clean_dir="pipeline/argumentation-based/data", limit=int(sys.argv[1]))
-    # else:
     #load_data(original_dir="data", clean_dir="pipeline/text-based/data")
-    load_data(original_dir="data", clean_dir="./pipeline/argumentation-based/data")
+    #load_data(original_dir="data", clean_dir="./pipeline/argumentation-based/data")
+    # TODO: Adapt margot so that: path_to_annotated="/home/mkersten/fake_news/pipeline/argumentation-based/tools/predictor/results"
+    rejoin_data(path_to_annotated="/home/mkersten/fake_news/pipeline/argumentation-based/argumentation structure/margot",
+                path_to_original="/home/mkersten/fake_news/pipeline/argumentation-based/data")
