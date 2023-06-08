@@ -98,7 +98,7 @@ if __name__ == "__main__":
     torch.cuda.empty_cache()
     print(f"CUDA device: {torch.cuda.get_device_name(torch.cuda.current_device())}")
     tokenizer = AutoTokenizer.from_pretrained("databricks/dolly-v2-12b", padding_side="left")
-    model = AutoModelForCausalLM.from_pretrained("databricks/dolly-v2-12b", device_map="auto", torch_dtype=torch.bfloat16)
+    model = AutoModelForCausalLM.from_pretrained("databricks/dolly-v2-12b", device_map="auto", torch_dtype=torch.bfloat16).to("cuda")
     generate_text = InstructionTextGenerationPipeline(model=model, tokenizer=tokenizer)
     
     dir = f"pipeline/argumentation-based"

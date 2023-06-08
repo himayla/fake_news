@@ -56,7 +56,7 @@ if __name__ == "__main__":
     print("------------------------------------------------------------------------\n")
 
     parser = argparse.ArgumentParser(description="Training")
-    parser.add_argument('-m', '--mode', choices=['t', 'a'], help="Select mode: 't' for text-based, 'a' for argumentation-based")
+    parser.add_argument('-m', '--mode', choices=['text-based', 'margot', 'dolly'], help="Select mode: 'text-based' for text-based, 'margot' for argumentation-based Margot, 'dolly' for argumentation-based Dolly")
 
     args = parser.parse_args()
 
@@ -87,8 +87,8 @@ if __name__ == "__main__":
 
         for name in os.listdir(dir):
             if os.path.isdir(f"{dir}/{name}"):
-                train = pd.read_csv(f"{dir}/{name}/train.csv").dropna()[:5]
-                test = pd.read_csv(f"{dir}/{name}/test.csv").dropna()[:5]
+                train = pd.read_csv(f"{dir}/{name}/train.csv").dropna()
+                test = pd.read_csv(f"{dir}/{name}/test.csv").dropna()
 
                 print(f"DATASET: {name} - LENGTH TRAIN: {len(train)}")
                 print("------------------------------------------------------------------------\n")
