@@ -3,3 +3,5 @@ transformers[torch]>=4.28.1,<5
 torch>=1.13.1,<2
 pandas
 nltk
+tqdm
+datasets==2.7.1

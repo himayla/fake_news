@@ -17,18 +17,13 @@ import torch
 import torch.nn as nn
 from pynvml import *
 
-print(f"Is CUDA available: {torch.cuda.is_available()}")
-# True
-print(f"CUDA device: {torch.cuda.get_device_name(torch.cuda.current_device())}")
-# Tesla T4
-
 import argparse
 
 all_models = ["bert-base-uncased", "roberta-base", "distilbert-base-uncased", "google/electra-base-discriminator"]
 
 def preprocess_function(news):
     if mode == "argumentation-based":
-        return tokenizer(news["structure"], truncation=True)
+        return tokenizer(news["evidence"], truncation=True) #####
     else:
         return tokenizer(news["text"], truncation=True)
 
@@ -67,10 +62,12 @@ if __name__ == "__main__":
         dir = f"pipeline/{mode}/data"
     elif args.mode == "margot":
         mode = "argumentation-based"
-        dir = f"pipeline/{mode}/argumentation structure/margot" # NOW ONLY MARGOT, NOT DOLLY
+        dir = f"pipeline/{mode}/argumentation structure/margot"
+        tool = "margot-evidence"
     elif args.mode == "dolly":
         mode = "argumentation-based"
-        dir = f"pipeline/{mode}/argumentation structure/dolly" # NOW ONLY MARGOT, NOT DOLLY
+        dir = f"pipeline/{mode}/argumentation structure/dolly" 
+        tool = "dolly"
 
 
     print(f"MODE {mode}")
@@ -81,7 +78,7 @@ if __name__ == "__main__":
     for model_name in all_models:
         current_time = datetime.now()
 
-        print(f"TRAINING: {model_name} - START: {current_time.hour}:{current_time.minute}")
+        print(f"{model_name} - START: {current_time.hour}:{current_time.minute}")
         print("------------------------------------------------------------------------\n")
 
 
@@ -90,11 +87,13 @@ if __name__ == "__main__":
                 train = pd.read_csv(f"{dir}/{name}/train.csv").dropna()
                 test = pd.read_csv(f"{dir}/{name}/test.csv").dropna()
 
-                print(f"DATASET: {name} - LENGTH TRAIN: {len(train)}")
+                print(f"DATASET: {name}")
+
                 print("------------------------------------------------------------------------\n")
 
                 train = Dataset.from_pandas(train).class_encode_column("label")
                 test = Dataset.from_pandas(test).class_encode_column("label")
+
                 print(train, test)
                 print("------------------------------------------------------------------------\n")
 
@@ -102,12 +101,12 @@ if __name__ == "__main__":
                 print("------------------------------------------------------------------------\n")
 
                 try:
-                    files = os.listdir(f"models/{mode}/{model_name}/{name}")
+                    files = os.listdir(f"models/{mode}/{tool}/{model_name}/{name}")
                     checkpoint_files = [f for f in files if f.startswith("checkpoint")]
                     if checkpoint_files:
                         sorted_checkpoint_files = sorted(checkpoint_files, key=lambda x: int(x.split("-")[1]), reverse=True)
                         highest_checkpoint = sorted_checkpoint_files[0]
-                        model_path = f"models/text/{model_name}/{name}/" + highest_checkpoint
+                        model_path = f"models/{mode}/{tool}/{model_name}/{name}/" + highest_checkpoint
                     else:
                         model_path = model_name
                 except FileNotFoundError:
@@ -115,12 +114,18 @@ if __name__ == "__main__":
 
                 if model_name == "google/electra-base-discriminator":
                     tokenizer = ElectraTokenizer.from_pretrained(model_name, truncation=True, padding='max_length', max_length=300, return_tensors="pt")
-                    model = ElectraForSequenceClassification.from_pretrained(f"{model_path}", num_labels=2, id2label={0: "FAKE", 1: "REAL"}, label2id={"FAKE": 0, "REAL": 1}).to("cuda")
+                    if torch.cuda.is_available():
+                        model = ElectraForSequenceClassification.from_pretrained(f"{model_path}", num_labels=2, id2label={0: "FAKE", 1: "REAL"}, label2id={"FAKE": 0, "REAL": 1}).to("cuda")
+                    else:
+                        model = ElectraForSequenceClassification.from_pretrained(f"{model_path}", num_labels=2, id2label={0: "FAKE", 1: "REAL"}, label2id={"FAKE": 0, "REAL": 1})
                 else:
                     tokenizer = AutoTokenizer.from_pretrained(model_name, truncation=True, padding='max_length', max_length=300, return_tensors="pt") 
-                    model = AutoModelForSequenceClassification.from_pretrained(f"{model_path}", num_labels=2, id2label={0: "FAKE", 1: "REAL"}, label2id={"FAKE": 0, "REAL": 1}).to("cuda")
-                
-                print_gpu_utilization()
+                    if torch.cuda.is_available():
+                        model = AutoModelForSequenceClassification.from_pretrained(f"{model_path}", num_labels=2, id2label={0: "FAKE", 1: "REAL"}, label2id={"FAKE": 0, "REAL": 1}).to("cuda")
+                        print_gpu_utilization()
+                    else:
+                        model = AutoModelForSequenceClassification.from_pretrained(f"{model_path}", num_labels=2, id2label={0: "FAKE", 1: "REAL"}, label2id={"FAKE": 0, "REAL": 1})
+                        
                 data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
                 tokenized_train = train.map(preprocess_function, batched=True)
@@ -128,7 +133,7 @@ if __name__ == "__main__":
 
                 # Documentation: https://huggingface.co/transformers/v3.0.2/main_classes/trainer.html
                 training_args = TrainingArguments(
-                    output_dir=f"models/{mode}/{model_name}/{name}",  # Directory where model checkpoints and logs will be saved
+                    output_dir=f"models/{mode}/{tool}/{model_name}/{name}",  # Directory where model checkpoints and logs will be saved
                     per_device_train_batch_size=32,  # Batch size for training
                     evaluation_strategy="epoch",  # Evaluate the model after every epoch
                     logging_strategy="epoch",  # Log training data stats for loss after every epoch
@@ -136,7 +141,7 @@ if __name__ == "__main__":
                     learning_rate=4e-5,  # Learning rate for the optimizer
                     optim="adamw_torch",
                     num_train_epochs=10,
-                    logging_dir=f"models/{mode}/{model_name}/{name}/logs",  # Directory where training logs will be saved
+                    logging_dir=f"models/{mode}/{tool}/{model_name}/{name}/logs",  # Directory where training logs will be saved
                     report_to="tensorboard",
                     save_total_limit=5,  # Limit the total number of saved checkpoints
                     adam_epsilon=1e-8,  # Epsilon value for Adam optimizer

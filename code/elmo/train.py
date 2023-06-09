@@ -50,10 +50,10 @@ def build_model(vocab: Vocabulary) -> Model:
 
 def build_data_loaders(
     reader,
-    train_data_path: str,
+    train_data: str,
     validation_data_path: str,) -> Tuple[DataLoader, DataLoader]:
     train_loader = MultiProcessDataLoader(
-        reader, train_data_path, batch_size=32, shuffle=True
+        reader, train_data, batch_size=32, shuffle=True
     )
     dev_loader = MultiProcessDataLoader(
         reader, validation_data_path, batch_size=32, shuffle=False
@@ -75,7 +75,7 @@ def build_trainer(
 
     trainer = GradientDescentTrainer(
         model=model,
-        serialization_dir=f"models/{mode}/elmo/{name}",
+        serialization_dir=f"models/{mode}/{tool}/elmo/{name}",
         data_loader=train_loader,
         validation_data_loader=dev_loader,
         num_epochs=10,
@@ -88,51 +88,60 @@ def build_trainer(
 
 
 if __name__ == "__main__":
-    print(f"Is CUDA available: {torch.cuda.is_available()}")
-    # True
-    print(f"CUDA device: {torch.cuda.get_device_name(torch.cuda.current_device())}")
-    # Tesla T4
     print("LOAD DATA")
     print("------------------------------------------------------------------------\n")
 
-    parser = argparse.ArgumentParser(description="Training")
-    parser.add_argument('-m', '--mode', choices=['t', 'a'], help="Select mode: 't' for text-based, 'a' for argumentation-based")
+    parser = argparse.ArgumentParser(description="Training Elmo")
+    parser.add_argument('-m', '--mode', choices=['text-based', 'margot', 'dolly'], help="Select mode: 'text-based' for text-based, 'margot' for argumentation-based Margot, 'dolly' for argumentation-based Dolly")
 
     args = parser.parse_args()
 
     mode = args.mode
 
-    if mode == "t":
+    if args.mode == "t":
         mode = "text-based"
+        dir = f"pipeline/{mode}/data"
+    elif args.mode == "margot":
+        mode = "argumentation-based"
+        dir = f"pipeline/{mode}/argumentation structure/margot"
+        tool = "margot-evidence"
+        columns = ["ID", "evidence", "label"]
+    elif args.mode == "dolly":
+        mode = "argumentation-based"
+        dir = f"pipeline/{mode}/argumentation structure/dolly" 
+        tool = "dolly"
 
     print(f"MODE {mode}")
     print("------------------------------------------------------------------------\n")
 
-    dir = f"pipeline/{mode}/data"
     for name in os.listdir(dir):
         if os.path.isdir(f"{dir}/{name}"):
-            reader = build_dataset_reader()
+            if name == "liar":
+                reader = build_dataset_reader()
 
-            train = pd.read_csv(f"{dir}/{name}/train.csv").dropna()
-            test = pd.read_csv(f"{dir}/{name}/test.csv").dropna()
-            
-            train_loader, test_loader = build_data_loaders(
-                reader, train, test
-            )
+                train = pd.read_csv(f"{dir}/{name}/train.csv").dropna()
+                test = pd.read_csv(f"{dir}/{name}/test.csv").dropna()
 
-            vocab = build_vocab(train_loader, test_loader)
-            model = build_model(vocab)
+                if not args.mode == "t":
+                    train = train.loc[:, columns]
+                    test = test.loc[:, columns]
 
-            train_loader.index_with(vocab)
-            test_loader.index_with(vocab)
+                train_loader, test_loader = build_data_loaders(
+                    reader, train, test
+                )
 
-            tensorboard_callback = TensorBoardCallback(serialization_dir=f"models/{mode}/elmo/{name}")
+                vocab = build_vocab(train_loader, test_loader)
+                model = build_model(vocab)
 
-            callbacks = [tensorboard_callback]
+                train_loader.index_with(vocab)
+                test_loader.index_with(vocab)
 
-            trainer = build_trainer(model, train_loader, test_loader, callbacks, name)
+                tensorboard_callback = TensorBoardCallback(serialization_dir=f"models/{mode}/{tool}/elmo/{name}/")
 
+                callbacks = [tensorboard_callback]
 
-            print("Starting training")
-            trainer.train()
-            print("Finished training")
+                trainer = build_trainer(model, train_loader, test_loader, callbacks, name)
+
+                print("Starting training")
+                trainer.train()
+                print("Finished training")

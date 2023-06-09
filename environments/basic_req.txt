@@ -17,3 +17,4 @@ PyEnchant
 pynvml
 accelerate
 sklearn
+tqdm
