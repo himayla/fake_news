@@ -18,3 +18,5 @@ pynvml
 accelerate
 sklearn
 tqdm
+spacy
+contextualSpellCheck

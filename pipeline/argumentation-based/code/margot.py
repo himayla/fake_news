@@ -11,8 +11,6 @@ path_to_temp_dir = "pipeline/argumentation-based/tools/predictor/temp"
 path_to_margot = "pipeline/argumentation-based/tools/predictor"
 path_to_run = "pipeline/argumentation-based/tools/predictor/run_margot.sh"
 
-annotations_path = "pipeline/argumentation-based/tools/predictor/temp/annotated"
-
 results_path = "pipeline/argumentation-based/argumentation structure/margot"
 
 def create_folders(name: str):
@@ -20,11 +18,6 @@ def create_folders(name: str):
         shutil.rmtree(path_to_temp_dir)
     os.makedirs(f"{path_to_temp_dir}/news/train")
     os.makedirs(f"{path_to_temp_dir}/news/test")
-
-    # if os.path.exists(f"{path_to_temp_dir}/annotations"):
-    #     shutil.rmtree(path_to_temp_dir)
-    # os.makedirs(f"{path_to_temp_dir}/annotations/train")
-    # os.makedirs(f"{path_to_temp_dir}/annotations/test")
 
     os.makedirs(f"{path_to_temp_dir}/arguments/train")
     os.makedirs(f"{path_to_temp_dir}/arguments/test")
@@ -34,8 +27,7 @@ def create_folders(name: str):
 
     if not os.path.exists(f"{results_path}/{name}"):           
         os.makedirs(f"{results_path}/{name}")
-        
-
+    
 
 def write_to_doc(clean_text: str, type: str) -> None:
     """
@@ -142,30 +134,26 @@ def rejoin_data(original: str,
 
 if __name__ == "__main__":
     for name in os.listdir(path_to_data): 
-        if os.path.isdir(f"{path_to_data}/{name}"):
+        if name == "kaggle_4000":
+            if os.path.isdir(f"{path_to_data}/{name}"):
 
-            create_folders(name)
-    
-            train = pd.read_csv(f"{path_to_data}/{name}/train.csv").dropna()
-            test = pd.read_csv(f"{path_to_data}/{name}/test.csv").dropna()
+                create_folders(name)
+        
+                train = pd.read_csv(f"{path_to_data}/{name}/train.csv").dropna()
+                test = pd.read_csv(f"{path_to_data}/{name}/test.csv").dropna()
 
-            step = 0
-            counter = 0
-            print(f"DATASET: {name} - LENGTH TRAIN: {len(train)}")
-            print("------------------------------------------------------------------------\n")
+                step = 0
+                counter = 0
+                print(f"DATASET: {name} - LENGTH TRAIN: {len(train)}")
+                print("------------------------------------------------------------------------\n")
 
-            # Convert news values out to documents
-            train.apply(lambda x: write_to_doc(x["text"], type="train"), axis=1)
-            test.apply(lambda x: write_to_doc(x["text"], type="test"), axis=1)
-
-            # Run Margot over the documents
-            train_structure = extract_argumentation(name, "train")
-            test_structure = extract_argumentation(name, "test")
-
-            # Combine structure with news
-            train_result = rejoin_data(train, train_structure)
-            test_result = rejoin_data(test, test_structure)
-
-            # Write result data/argumentation_structure
-            train_result.to_csv(f"{results_path}/{name}/train.csv")
-            test_result.to_csv(f"{results_path}/{name}/test.csv")
+                # Convert news values out to documents
+                train.apply(lambda x: write_to_doc(x["text"], type="train"), axis=1)
+                train_structure = extract_argumentation(name, "train")
+                train_result = rejoin_data(train, train_structure)
+                train_result.to_csv(f"{results_path}/{name}/train.csv")
+                
+                test.apply(lambda x: write_to_doc(x["text"], type="test"), axis=1)
+                test_structure = extract_argumentation(name, "test")
+                test_result = rejoin_data(test, test_structure)
+                test_result.to_csv(f"{results_path}/{name}/test.csv")

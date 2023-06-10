@@ -1,10 +1,6 @@
-import sklearn; print(sklearn.__version__)
 from sklearn.model_selection import train_test_split
-# from sklearn.cross_validation import train_test_split
 import pandas as pd
 import os
-import sys
-
 import cleaner
 
 def load_data(original_dir, clean_dir, limit=None):
@@ -30,7 +26,9 @@ def load_data(original_dir, clean_dir, limit=None):
                     df = load_liar(f"{original_dir}/{name}")
                 elif name == "kaggle":
                     df = load_kaggle(f"{original_dir}/{name}")
-
+                elif name == "kaggle_4000":
+                    df = load_kaggle(f"{original_dir}/{name}")
+    
                 if limit:
                     df = df[:limit]
 
@@ -89,17 +87,19 @@ def load_liar(path):
     return liar
 
 def load_kaggle(path):
-    # !!!! Important: capped at 2.000
-    df_real = pd.read_csv(f"{path}/True.csv", nrows=200)
+    """
+    Currently capped at 4.000
+    """
+    df_real = pd.read_csv(f"{path}/True.csv", nrows=2000)
     df_real["label"] = "REAL"
 
-    df_fake = pd.read_csv(f"{path}/Fake.csv", nrows=200)
+    df_fake = pd.read_csv(f"{path}/Fake.csv", nrows=2000)
     df_fake["label"] = "FAKE"
 
     kaggle = pd.concat([df_real, df_fake], ignore_index=True)
 
-    kaggle = kaggle.sample(frac=1, replace=False)#.reset_index(drop=True)
-
+    kaggle = kaggle.sample(frac=1, replace=False)
+    
     kaggle = kaggle[["text", "label"]]
 
     kaggle = kaggle.drop_duplicates(subset=["text"])
@@ -145,7 +145,7 @@ def rejoin_data(path_to_annotated: str,
 
 if __name__ == "__main__":
     #load_data(original_dir="data", clean_dir="pipeline/text-based/data")
-    #load_data(original_dir="data", clean_dir="./pipeline/argumentation-based/data")
+    load_data(original_dir="data", clean_dir="pipeline/argumentation-based/data")
     # TODO: Adapt margot so that: path_to_annotated="/home/mkersten/fake_news/pipeline/argumentation-based/tools/predictor/results"
-    rejoin_data(path_to_annotated="/home/mkersten/fake_news/pipeline/argumentation-based/argumentation structure/margot",
-                path_to_original="/home/mkersten/fake_news/pipeline/argumentation-based/data")
+    # rejoin_data(path_to_annotated="/home/mkersten/fake_news/pipeline/argumentation-based/argumentation structure/margot",
+    #             path_to_original="/home/mkersten/fake_news/pipeline/argumentation-based/data")
