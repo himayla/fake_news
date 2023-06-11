@@ -58,7 +58,7 @@ def get_special_token_id(tokenizer: PreTrainedTokenizer, key: str) -> int:
 class InstructionTextGenerationPipeline(Pipeline):
     def __init__(
         #self, *args, do_sample: bool = True, max_new_tokens: int = 256, top_p: float = 0.92, top_k: int = 0, **kwargs
-        self, *args, do_sample: bool = True, max_new_tokens: int = 100, top_p: float = 0.5, top_k: int = 0, **kwargs
+        self, *args, do_sample: bool = True, max_new_tokens: int = 300, top_p: float = 0.5, top_k: int = 0, **kwargs
     ):
         """Initialize the pipeline
 

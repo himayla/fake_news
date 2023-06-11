@@ -1,17 +1,13 @@
+import contextualSpellCheck
 import enchant
 import nltk
-from nltk.corpus import stopwords
-from nltk.stem.snowball import SnowballStemmer
+from nltk.corpus import stopwords; nltk.download('stopwords',quiet=True)
+from nltk.stem.snowball import SnowballStemmer; nltk.download("punkt", quiet=True)
 from nltk.tokenize import word_tokenize
-nltk.download('stopwords',quiet=True)
-nltk.download("punkt", quiet=True)
-import pandas as pd
-import re
-import string
-import spacy
-import contextualSpellCheck
+import re 
+import spacy # If error: python -m spacy download en_core_web_sm
 
-# If error: python -m spacy download en_core_web_sm
+
 
 # Load NLTK stopwords and Snowball stemmer
 stop_words = set(stopwords.words('english'))
@@ -55,25 +51,28 @@ def correct_spelling(words):
             if suggestions:
                 corrected_word = suggestions[0]
             else:
-                corrected_word = word  
+                corrected_word = word
             corrected_words.append(corrected_word)
         else:
             corrected_words.append(word)
     return corrected_words
 
 def replace_money_amounts(text):
-    pattern = r"\$(\d+(\.\d{2})?)"
-    result = re.sub(pattern, lambda match: format_money_amount(match.group(1)), text)
-    return result
 
-def format_money_amount(amount):
-    amount = float(amount)
-    if amount >= 1000000000:  # greater than or equal to 1 billion
-        return f"over {amount / 1000000000:.2f} billion dollars"
-    elif amount >= 1000000:  # greater than or equal to 1 million
-        return f"over {amount / 1000000:.2f} million dollars"
+    replaced_text = re.sub(r"\$([\d,.]+)", replace_match, text)
+
+    # print(replaced_text)
+
+    return replaced_text
+
+
+def replace_match(match):
+    amount = match.group(1)
+    if '.' in amount:
+        amount = 'over ' + amount.split('.')[0]
     else:
-        return f"over {amount:.2f} dollars"
+        amount = amount.replace(',', '') + ' dollars'
+    return amount
 
 def clean_text(raw_txt, dir):
     replacements = load_replacements(f'{dir}/replacements.txt')
@@ -82,68 +81,103 @@ def clean_text(raw_txt, dir):
         words = word_tokenize(raw_txt)
         corrected_words = correct_spelling(words)
         words = [stemmer.stem(w) for w in corrected_words]
+        # Argumentation based
     else:
+        # Remove patterns from replacements.txt
         for pattern in replacements:
             raw_txt = re.sub(pattern, '', raw_txt)
-        
-        raw_txt = re.sub(r'” ', ' ', raw_txt)
-        raw_txt = re.sub(r"\’", "'", raw_txt)
-        raw_txt = re.sub(r'’’', "", raw_txt)
-        raw_txt = re.sub(r' ', ' ', raw_txt)
-      
-        raw_txt = re.sub(r"'s ", "s ", raw_txt)
-        raw_txt = re.sub(r"We're ", "We are ", raw_txt)
-        raw_txt = re.sub(r"n't ", " not", raw_txt)
-
-        raw_txt = re.sub(r" weren t ", " were not ", raw_txt)
-        raw_txt = re.sub(r" there's ", " there is ", raw_txt)
-        raw_txt = re.sub(r" there s ", " there is ", raw_txt)
-        raw_txt = re.sub(r" don t ", " do not ", raw_txt)
-        raw_txt = re.sub(r"Don t ", "Do not ", raw_txt)
-
-        raw_txt = re.sub(r"There s ", "There is ", raw_txt)
-        raw_txt = re.sub(r"Weren t ", "Were not ", raw_txt)
-        raw_txt = re.sub(r"won t ", "will not ", raw_txt)
-        raw_txt = re.sub(r"Won t ", "Will not ", raw_txt)
-        raw_txt = re.sub(r"\?\?\?", "?", raw_txt)
-
-        raw_txt = re.sub(r'U.S.', "United States", raw_txt)
-        raw_txt = re.sub(r'St. ', "Saint ", raw_txt)
-        raw_txt = re.sub(r'Gen.', "General", raw_txt)
-        raw_txt = re.sub(r' D.C.', " District County", raw_txt)
-
-        raw_txt = re.sub(r'Dec.', "December", raw_txt)
-        raw_txt = re.sub(r' & ', " and ", raw_txt)
-        raw_txt = re.sub(r' J. ', " Junior ", raw_txt)
-
-        raw_txt = re.sub(r' ll ', "", raw_txt)
-        raw_txt = re.sub(r'diplomacy.While', "diplomacy. While", raw_txt)
-        raw_txt = re.sub(r';', ":", raw_txt)
-        raw_txt = re.sub(r', ', " ", raw_txt)
-        raw_txt = re.sub(r'``', "", raw_txt)
-        raw_txt = re.sub(r'\(', "", raw_txt)
-        raw_txt = re.sub(r'\)', "", raw_txt)
 
         raw_txt = replace_money_amounts(raw_txt)
+
+        # Extra stops
+        raw_txt = re.sub(r"\.{2,}", ".", raw_txt)
+
+        # Replace sentences: 'hello.World' -> 'hello. World'
         raw_txt = fix_punctuation(raw_txt)
+
     
-        words = word_tokenize(raw_txt)
+        # Weird space, : and -
+        raw_txt = re.sub(r' |:|—|-|–', ' ', raw_txt)
 
-        clean_words = []
-        for word in words:
-            new = re.sub(r'Oct.', 'October', word)
-            new = re.sub(r'Gov. ', "Governor", new)
-            new = re.sub(r'EU', "European Union", new)
+        # New lines
+        raw_txt = re.sub(r'\n', ' ', raw_txt)
 
-            new = re.sub(r'Sen.', "Senator", new)
-            new = re.sub(r"”’```''’’", "'", new)
+        # With spaces: - and ”
+        raw_txt = re.sub(r',”|” |,', ' ', raw_txt)
 
-            clean_words.append(new)
-    
-    clean_txt = "".join([" " + i if not i.startswith("'") and i not in [',','.','(',')','?',':','!','"','\'', "@", "$", '$'] else i for i in clean_words]).strip()
+        # Quotation issues
+        raw_txt = re.sub(r"’|'|\"", "'", raw_txt)
+        raw_txt = re.sub(r'’’| ”|\$|‘|”', '', raw_txt)
 
+        # Double space
+        raw_txt = re.sub(r"\ {2,}", " ", raw_txt)
 
-    doc = nlp(clean_txt)
-    clean_txt = doc._.outcome_spellCheck
+        # Words with punctuation, and lowercase
+        raw_txt = re.sub(r' u.s. ', " united states ", raw_txt.lower())
+        raw_txt = re.sub(r' gen. ', " general ", raw_txt)
+        raw_txt = re.sub(r' sen. ', " senator ", raw_txt)
+        raw_txt = re.sub(r' mr. ', " mister ", raw_txt)
+        raw_txt = re.sub(r' gop ', " republican party ", raw_txt)
+        raw_txt = re.sub(r' h. w. bush ', " herbert walker bush ", raw_txt)
+        raw_txt = re.sub(r' v. ', " versus ", raw_txt)
+
+        raw_txt = re.sub(r' jan. ', " january ", raw_txt)
+        raw_txt = re.sub(r' feb. ', " february ", raw_txt)
+        raw_txt = re.sub(r' mar. ', " march ", raw_txt)
+        raw_txt = re.sub(r' apr. ', " april ", raw_txt)
+        raw_txt = re.sub(r' jun. ', " june ", raw_txt)
+        raw_txt = re.sub(r' jul. ', " july ", raw_txt)
+        raw_txt = re.sub(r' aug. ', " augustus ", raw_txt)
+        raw_txt = re.sub(r' sept. ', " september ", raw_txt)
+        raw_txt = re.sub(r' oct. ', " october ", raw_txt)
+        raw_txt = re.sub(r' nov. ', " november ", raw_txt)
+        raw_txt = re.sub(r' dec. ', " december ", raw_txt)
+
+        raw_txt = re.sub(r' n.c. ', " north carolina ", raw_txt)
+        raw_txt = re.sub(r' f.b.i ', " federal bureau of investigation ", raw_txt)
+
+        raw_txt = re.sub(r' d.c. ', " district of columbia ", raw_txt)
+        raw_txt = re.sub(r' jr. ', " junior ", raw_txt)
+        raw_txt = re.sub(r' inc. ', " incorporated ", raw_txt)
+        raw_txt = re.sub(r' donald j. trump ', " donald trump ", raw_txt)
+        raw_txt = re.sub(r' > ', " over ", raw_txt)
+        raw_txt = re.sub(r'n t. ', " not. ", raw_txt)
+        raw_txt = re.sub(r' ll ', " will ", raw_txt)
+
+        raw_txt = re.sub(r', ', ' and ', raw_txt)
+        
+        # Final left over '
+        raw_txt = re.sub(r"' |'", " ", raw_txt)
+        raw_txt = re.sub(r"'", "", raw_txt)
+
+        # Contractions
+        sentences = []
+        for sent in raw_txt.split('. '):
+            if len(sent.split()) > 3:
+                s = re.sub(r"could ", "could not ", sent.lower())
+                s = re.sub(r"i'm ", "i am ", s)
+
+                s = re.sub(r"it s ", "it is ", s)
+                s = re.sub(r"mam ", "madame ", s)
+                # s = re.sub(r" n t ", " not ", s)
+
+                s = re.sub(r"we re ", "we are ", s)
+
+                s = re.sub(r"there's ", "there is ", s)
+                s = re.sub(r"there s ", "there is ", s)
+
+                # Single s
+                s = re.sub(r" s ", "s ", s)
+                s = re.sub(r"'s ", "s ", s)
+
+                # Extra question marks
+                s = re.sub(r"\?{2,}", "?", s)
+
+                # Double spaces
+                s = re.sub(r"\ {2,}", " ", s)
+
+                sentences.append(s.strip())
+
+        clean_txt = '. '.join(sentences)
 
     return clean_txt

@@ -3,7 +3,7 @@ import os
 import pandas as pd
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, ElectraTokenizer, ElectraForSequenceClassification
 
-import loader, write_out
+import loader, code.helpers as helpers
 
 all_models = ["bert-base-uncased", "roberta-base", "distilbert-base-uncased", "google/electra-base-discriminator"]
 
@@ -61,4 +61,4 @@ if __name__ == "__main__":
 
         output = pd.DataFrame.from_dict(res)
 
-        write_out.write_data(output, "results/predictions")
+        helpers.write_data(output, "results/predictions")

@@ -20,24 +20,20 @@ def load_data(original_dir, clean_dir, limit=None):
                 print(f"CLEAN DATASET: {name}")
                 print("------------------------------------------------------------------------")
 
-                if name == "fake_real":
+                if name == "fake_real_1000":
                     df = load_fake(f"{original_dir}/{name}/{name}.csv")
-                elif name == "liar":
+                elif name == "liar_1000":
                     df = load_liar(f"{original_dir}/{name}")
-                elif name == "kaggle":
+                elif name == "kaggle_1000":
                     df = load_kaggle(f"{original_dir}/{name}")
-                elif name == "kaggle_4000":
-                    df = load_kaggle(f"{original_dir}/{name}")
-    
-                if limit:
-                    df = df[:limit]
-
+                else:
+                    break
                 df.loc[:, 'text'] = df.apply(lambda x: cleaner.clean_text(x["text"], clean_dir), axis=1)
     
                 train, test = train_test_split(df, test_size=0.2)
                 test, validation = train_test_split(test, test_size=0.25)
 
-                print(f"TRAIN - # FAKE: {len(train[train['label'] == 'FAKE'])}, # REAL:{len(train[train['label'] == 'REAL'])}")
+                print(f"TRAIN - # FAKE: {len(train[train['label'] == 'FAKE'])} - # REAL:{len(train[train['label'] == 'REAL'])}")
                 print("------------------------------------------------------------------------")
 
                 if not os.path.exists(f"{clean_dir}/{name}"):
@@ -50,10 +46,13 @@ def load_data(original_dir, clean_dir, limit=None):
 
 def load_fake(path):
     # Load Fake and Real News dataset by Mcintire
-    fake_real = pd.read_csv(path)
+    fake_real = pd.read_csv(path, skip_blank_lines=True)
 
     # Remove metadata from datasets
     fake_real = fake_real.drop(columns=["idd", "title"])
+
+    fake_real = fake_real.sample(n=1000, replace=False)
+
 
     fake_real.dropna(inplace=True)
     return fake_real
@@ -67,6 +66,8 @@ def load_liar(path):
     liar_test = pd.read_csv(f"{path}/test.tsv", sep="\t", names=labels)
 
     liar = pd.concat([liar_train, liar_valid, liar_test]).reset_index(drop=True)
+
+    liar = liar.sample(n=1000, replace=False)
 
     # Convert labels
     liar["label"] = liar["label"].map({
@@ -88,17 +89,17 @@ def load_liar(path):
 
 def load_kaggle(path):
     """
-    Currently capped at 4.000
+    Currently capped at 1.000
     """
-    df_real = pd.read_csv(f"{path}/True.csv", nrows=2000)
+    df_real = pd.read_csv(f"{path}/True.csv")
     df_real["label"] = "REAL"
 
-    df_fake = pd.read_csv(f"{path}/Fake.csv", nrows=2000)
+    df_fake = pd.read_csv(f"{path}/Fake.csv")
     df_fake["label"] = "FAKE"
 
     kaggle = pd.concat([df_real, df_fake], ignore_index=True)
 
-    kaggle = kaggle.sample(frac=1, replace=False)
+    kaggle = kaggle.sample(n=1000, replace=False)
     
     kaggle = kaggle[["text", "label"]]
 
@@ -108,44 +109,6 @@ def load_kaggle(path):
   
     return kaggle
 
-def rejoin_data(path_to_annotated: str, 
-                path_to_original: str) -> None:
-    """
-        Helper function for argumentation based classifier.
-        Function combines annotated files to original files.
-        Args:
-            path_to_annotated (str): Location of files after annotations
-            path_to_original (str): Location of files before annotating 
-
-    """
-    data = {}
-    for file in os.listdir(path_to_annotated):
-        if file.endswith(".csv"):
-
-            name = file.split('-')[0]
-            df = pd.read_csv(f"{path_to_annotated}/{file}")
-
-            # Only continue with rows that either contain claim or evidence
-            mask = (df['claim'] != "[]") | (df['evidence'] != "[]")
-            df = df.loc[mask]
-
-            # Add the labels TRUE/FALSE from original based on index
-            df_labels = pd.read_csv(f"{path_to_original}/{name}.csv", index_col="ID", usecols=["ID","label"])
-            merged_df = df.merge(df_labels, left_index=True, right_index=True, how='left')
-
-            # Merge claim & evidence together as "text"
-            merged_df["claim"] = merged_df["claim"].apply(lambda x: f"Claim(s): {', '.join(eval(x)) if eval(x) else 'UNKNOWN'}. ")
-            merged_df["evidence"] = merged_df["evidence"].apply(lambda x: f"Evidence(s): {', '.join(eval(x)) if eval(x) else 'UNKNOWN'}. ")
-            merged_df["text"] = merged_df["claim"] + merged_df["evidence"]
-            merged_df = merged_df.drop(['claim', 'evidence'], axis=1)
-            merged_df.dropna(inplace=True)
-            data[name] = merged_df
-
-    return data
-
 if __name__ == "__main__":
-    #load_data(original_dir="data", clean_dir="pipeline/text-based/data")
+    # load_data(original_dir="data", clean_dir="pipeline/text-based/data")
     load_data(original_dir="data", clean_dir="pipeline/argumentation-based/data")
-    # TODO: Adapt margot so that: path_to_annotated="/home/mkersten/fake_news/pipeline/argumentation-based/tools/predictor/results"
-    # rejoin_data(path_to_annotated="/home/mkersten/fake_news/pipeline/argumentation-based/argumentation structure/margot",
-    #             path_to_original="/home/mkersten/fake_news/pipeline/argumentation-based/data")

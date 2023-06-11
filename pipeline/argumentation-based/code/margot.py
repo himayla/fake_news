@@ -5,15 +5,15 @@ import json
 import numpy as np
 import shutil
 
-path_to_data = "pipeline/argumentation-based/data"
-path_to_temp_dir = "pipeline/argumentation-based/tools/predictor/temp"
-
-path_to_margot = "pipeline/argumentation-based/tools/predictor"
-path_to_run = "pipeline/argumentation-based/tools/predictor/run_margot.sh"
-
-results_path = "pipeline/argumentation-based/argumentation structure/margot"
+TEMP_NAME = "temp" # Change when you run different jobs at the same time
 
 def create_folders(name: str):
+    """
+    Function to create the necessary folders to use MARGOT.
+        Args:
+            name: Name of the dataset (options: fake_real, kaggle, liar)
+        Returns: None
+    """
     if os.path.exists(path_to_temp_dir):
         shutil.rmtree(path_to_temp_dir)
     os.makedirs(f"{path_to_temp_dir}/news/train")
@@ -32,7 +32,7 @@ def create_folders(name: str):
 def write_to_doc(clean_text: str, type: str) -> None:
     """
         Function to convert texts in the DataFrame to temporary text files.
-        The function writes out one string to a file, where the filename is the row number.
+        The function writes out one string to a file, where the filename is the row number (found by counter).
         Args:
             clean_text = string
             type = string with e.g.: train, test
@@ -40,7 +40,7 @@ def write_to_doc(clean_text: str, type: str) -> None:
             Creates a folder with news texts.
     """
     global counter
-    with open(f"{path_to_margot}/temp/news/{type}/{counter}.txt", "a+") as text_file:
+    with open(f"{path_to_temp_dir}/news/{type}/{counter}.txt", "a+") as text_file:
         text_file.write(clean_text)
     counter += 1
     
@@ -57,14 +57,14 @@ def extract_argumentation(name: str, type: str) -> pd.DataFrame:
     """
     global step
 
-    for idx, file in enumerate(sorted(os.listdir(f"{path_to_margot}/temp/news/{type}"), key=lambda x: int(x.split('.')[0]))):
+    for idx, file in enumerate(sorted(os.listdir(f"{path_to_temp_dir}/news/{type}"), key=lambda x: int(x.split('.')[0]))):
 
-        total = len(os.listdir(f"{path_to_margot}/temp/news/{type}"))
+        total = len(os.listdir(f"{path_to_temp_dir}/news/{type}"))
         print(f"STEP: {step}")
         print("------------------------------------------------------------------------")
 
-        input = f"temp/news/{type}/{file}"
-        output = f"temp/arguments/{type}/{idx}"
+        input = f"{TEMP_NAME}/news/{type}/{file}"
+        output = f"{TEMP_NAME}/arguments/{type}/{idx}"
         subprocess.call([path_to_run, input, output])
 
         step += 1
@@ -88,10 +88,11 @@ def parse_output(type: str) -> pd.DataFrame:
             type = string with e.g.: train, test.
         Returns:
             DataFrame containing the claim and evidences
+            type = string with e.g.: train, test.
     """
     claim_evidence = {}
-    for dir in sorted(os.listdir(f"{path_to_margot}/temp/arguments/{type}"), key=lambda x: int(x.split('.')[0])):
-        with open(f"{path_to_margot}/temp/arguments/{type}/{dir}/OUTPUT.json") as json_file:
+    for dir in sorted(os.listdir(f"{path_to_temp_dir}/arguments/{type}"), key=lambda x: int(x.split('.')[0])):
+        with open(f"{path_to_temp_dir}/arguments/{type}/{dir}/OUTPUT.json") as json_file:
             doc = json.loads(json_file.read())
 
             options = {"claim": [], "evidence": []}
@@ -99,10 +100,12 @@ def parse_output(type: str) -> pd.DataFrame:
             for sent in doc["document"]:
 
                 if sent.get("claim"):
-                    options["claim"].append(sent["claim"])
+                    s = sent["claim"] + "\""
+                    options["claim"].append(s.replace(' .', '.'))
 
                 elif sent.get("evidence"):
-                    options["evidence"].append(sent["evidence"])
+                    s = sent["evidence"]
+                    options["evidence"].append(s.replace(' .', '.'))
 
         claim_evidence[dir] = options
     
@@ -123,37 +126,49 @@ def rejoin_data(original: str,
     merged_df = pd.concat([original.reset_index(drop=True), df_structure.reset_index(drop=True)], axis=1)
 
     # Merge claim & evidence together as "structure"
-    merged_df["claim"] = merged_df["claim"].apply(lambda x: f"Claim(s): {', '.join(x) if x else 'UNKNOWN'}. ")
-    # print(merged_df["claim"])
-    merged_df["evidence"] = merged_df["evidence"].apply(lambda x: f"Evidence(s): {', '.join(x) if x else 'UNKNOWN'}. ")
-    # print(merged_df["evidence"])
-    merged_df["structure"] = merged_df["claim"] + merged_df["evidence"]
+    merged_df["claim"] = merged_df["claim"].apply(lambda x: ', '.join(x) if x else '<unk>')
+    merged_df["evidence"] = merged_df["evidence"].apply(lambda x: ', '.join(x) if x else '<unk>')
+    claims = "\"claims:\"" + merged_df["claim"].values
+    evidences = "\"evidences:\"" + merged_df["evidence"].values
+
+    merged_df["structure"] = claims + evidences
     merged_df.dropna(inplace=True)
 
     return merged_df
 
+def run(original: pd.DataFrame, name: str, type: str) -> None:
+    """
+        Args:
+            original = DataFrame before MARGOT
+            name = string name of dataset. Choices are kaggle, fake_real, liar
+    """
+    original.apply(lambda x: write_to_doc(x["text"], type=type), axis=1)
+    structure = extract_argumentation(name, type)
+    result = rejoin_data(original, structure)
+
+    result.to_csv(f"{results_path}/{name}/{type}.csv", columns=["ID", "text", "claim", "evidence", "structure", "label"])
+
 if __name__ == "__main__":
+    path_to_data = "pipeline/argumentation-based/data"
+    path_to_temp_dir = f"pipeline/argumentation-based/tools/predictor/{TEMP_NAME}"
+
+    path_to_margot = "pipeline/argumentation-based/tools/predictor"
+    path_to_run = "pipeline/argumentation-based/tools/predictor/run_margot.sh"
+
+    results_path = "pipeline/argumentation-based/argumentation structure/margot"
+
     for name in os.listdir(path_to_data): 
-        if name == "kaggle_4000":
-            if os.path.isdir(f"{path_to_data}/{name}"):
+        if os.path.isdir(f"{path_to_data}/{name}") and name != ".DS_Store":
 
-                create_folders(name)
-        
-                train = pd.read_csv(f"{path_to_data}/{name}/train.csv").dropna()
-                test = pd.read_csv(f"{path_to_data}/{name}/test.csv").dropna()
+            create_folders(name)
+            step, counter = 0, 0
+    
+            train = pd.read_csv(f"{path_to_data}/{name}/train.csv").dropna()
+            test = pd.read_csv(f"{path_to_data}/{name}/test.csv").dropna()
 
-                step = 0
-                counter = 0
-                print(f"DATASET: {name} - LENGTH TRAIN: {len(train)}")
-                print("------------------------------------------------------------------------\n")
+            print(f"DATASET: {name} - LENGTH TRAIN: {len(train)}")
+            print("------------------------------------------------------------------------\n")
 
-                # Convert news values out to documents
-                train.apply(lambda x: write_to_doc(x["text"], type="train"), axis=1)
-                train_structure = extract_argumentation(name, "train")
-                train_result = rejoin_data(train, train_structure)
-                train_result.to_csv(f"{results_path}/{name}/train.csv")
-                
-                test.apply(lambda x: write_to_doc(x["text"], type="test"), axis=1)
-                test_structure = extract_argumentation(name, "test")
-                test_result = rejoin_data(test, test_structure)
-                test_result.to_csv(f"{results_path}/{name}/test.csv")
+            # Convert news values out to documents
+            run(train, name, "train")
+            run(test, name, "test")
