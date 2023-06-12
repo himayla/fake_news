@@ -83,6 +83,8 @@ def load_liar(path):
 
     liar = liar.rename(columns={"statement": "text"})
 
+
+    
     liar.dropna(inplace=True)
 
     return liar

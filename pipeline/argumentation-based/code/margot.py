@@ -128,8 +128,8 @@ def rejoin_data(original: str,
     # Merge claim & evidence together as "structure"
     merged_df["claim"] = merged_df["claim"].apply(lambda x: ', '.join(x) if x else '<unk>')
     merged_df["evidence"] = merged_df["evidence"].apply(lambda x: ', '.join(x) if x else '<unk>')
-    claims = "\"claims:\"" + merged_df["claim"].values
-    evidences = "\"evidences:\"" + merged_df["evidence"].values
+    claims = "claims:" + merged_df["claim"].values
+    evidences = "evidences:" + merged_df["evidence"].values
 
     merged_df["structure"] = claims + evidences
     merged_df.dropna(inplace=True)

@@ -7,8 +7,6 @@ from nltk.tokenize import word_tokenize
 import re 
 import spacy # If error: python -m spacy download en_core_web_sm
 
-
-
 # Load NLTK stopwords and Snowball stemmer
 stop_words = set(stopwords.words('english'))
 stemmer = SnowballStemmer("english")
@@ -25,7 +23,7 @@ def load_replacements(file_path):
 
 def fix_punctuation(text):
     # Define the regular expression pattern
-    pattern = r'(?<!\b[A-Z])\.(?!\.\s)'
+    pattern = r'\b[A-Za-z]+\.[A-Za-z]+\b(?!\.)'
 
     # Use the pattern to find matches in the text
     matches = re.finditer(pattern, text)
@@ -58,7 +56,6 @@ def correct_spelling(words):
     return corrected_words
 
 def replace_money_amounts(text):
-
     replaced_text = re.sub(r"\$([\d,.]+)", replace_match, text)
 
     # print(replaced_text)
@@ -75,6 +72,7 @@ def replace_match(match):
     return amount
 
 def clean_text(raw_txt, dir):
+
     replacements = load_replacements(f'{dir}/replacements.txt')
 
     if 'text-based' in dir:
@@ -94,7 +92,6 @@ def clean_text(raw_txt, dir):
 
         # Replace sentences: 'hello.World' -> 'hello. World'
         raw_txt = fix_punctuation(raw_txt)
-
     
         # Weird space, : and -
         raw_txt = re.sub(r' |:|—|-|–', ' ', raw_txt)
@@ -141,7 +138,7 @@ def clean_text(raw_txt, dir):
         raw_txt = re.sub(r' inc. ', " incorporated ", raw_txt)
         raw_txt = re.sub(r' donald j. trump ', " donald trump ", raw_txt)
         raw_txt = re.sub(r' > ', " over ", raw_txt)
-        raw_txt = re.sub(r'n t. ', " not. ", raw_txt)
+        # raw_txt = re.sub(r'n t. ', " not. ", raw_txt)
         raw_txt = re.sub(r' ll ', " will ", raw_txt)
 
         raw_txt = re.sub(r', ', ' and ', raw_txt)
@@ -179,5 +176,9 @@ def clean_text(raw_txt, dir):
                 sentences.append(s.strip())
 
         clean_txt = '. '.join(sentences)
+
+    # Make sure all txts end with a full stop
+    if not clean_txt.endswith('.'):
+        clean_txt = clean_txt + '.'
 
     return clean_txt

@@ -8,9 +8,10 @@ from nltk.tokenize import sent_tokenize
 from instruct_pipeline import InstructionTextGenerationPipeline
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from torch.utils.data import Dataset, DataLoader
+import re
 
-DATASET = "sample"
-BATCH_SIZE = 3
+DATASET = "kaggle_1000"
+BATCH_SIZE = 100
 MAX_SECTION = 300
 
 class NewsDataset(Dataset):
@@ -29,31 +30,39 @@ class NewsDataset(Dataset):
         global step
 
         current_time = datetime.now()
-        print(f"PROCESSING BATCH - STEP {step} - {current_time.hour}:{current_time.minute}")
+        print(f"PROCESSING BATCH {len(batch)}- STEP {step} - {current_time.hour}:{current_time.minute}")
         print("-------------------------------------------------------------------\n")
         texts = batch["text"]
 
         sections = [divide(text) for text in texts]
 
         claims, evidences = [], []
-        for i, section_list in enumerate(sections):
+        for section_list in sections:
             section_claims, section_evidences = [], []
             
-            for s, section in enumerate(section_list):
-                claim_prompt = f"Without providing any interpretation, please state the main claim made by the author in the following section of a news article:\n{section}"
-                evidence_prompt = f"Without providing any interpretation, please state the main evidence provided by the author in the following section of a news article:\n{section}"
+            for section in section_list:
+                claim_prompt = f"Please state the main claim made by the author in the following section of a news article:\n{section}"
+                evidence_prompt = f"Please state the main evidence provided by the author in the following section of a news article:\n{section}"
 
                 claim_responses = generate_text(claim_prompt)
                 evidence_responses = generate_text(evidence_prompt)
+                
+                claim_response = re.sub(r'\"\"\"', '"', claim_responses[0]["response"])
+                evidence_response = re.sub(r'\"\"\"', '"', evidence_responses[0]["response"])
 
-                section_claims.append([response["response"] for response in claim_responses])
-                section_evidences.append([response["response"] for response in evidence_responses])
 
-            claims.append(sum(section_claims, []))
-            evidences.append(sum(section_evidences, []))
+                section_claims.append(claim_response)
+                section_evidences.append(evidence_response)
 
-        batch["claim"] = ', '.join(sum(section_claims, []))
-        batch["evidence"] = ', '.join(sum(section_claims, []))
+            claims.append(section_claims)
+            evidences.append(section_evidences)
+
+        batch["claim"] = [', '.join(i for i in cl) for cl in claims]
+        batch["evidence"] = [', '.join(i for i in ev) for ev in evidences]
+        res_claims = 'claims:' + [', '.join(i for i in cl) for cl in claims]
+        res_evidences = 'evidences:' + [', '.join(i for i in ev) for ev in evidences]
+
+        batch["structure"] =  [' '.join(str(i) for i in items) for items in zip(res_claims, res_evidences)]
 
         return batch
 
@@ -74,6 +83,7 @@ def divide(news):
     return sections
 
 def run(data, type):
+    global step
     datas = NewsDataset(data)
     dataloader = DataLoader(datas, batch_size=BATCH_SIZE)
     
@@ -87,14 +97,15 @@ def run(data, type):
         print("WRITE OUT TEMPORARY FILE")
         print("-------------------------------------------------------------------\n")
 
-        # batch_df["ID"] = batch_df["ID"].astype(int)
         processed.append(batch_df)
-        batch_df.to_csv(f"{p}/{name}/{type}_{i}_batch.csv", columns=["text", "claim", "evidence", "label"])
+        batch_df.to_csv(f"{p}/{name}/{type}_{i}_batch.csv", columns=["text", "claim", "evidence", "structure", "label"])
 
-    result = pd.concat(processed) 
-    result.set_index("ID", inplace=True)
+        step += 1
 
-    result.to_csv(f"{p}/{name}/{type}.csv", columns=["claim", "evidence", "label"]) #  REMOVED TEXT FOR CHECK
+    result  = pd.concat(processed)
+    print(result.head()) 
+
+    result.to_csv(f"{p}/{name}/{type}.csv", columns=["text", "claim", "evidence","structure", "label"])
 
     return result
 
@@ -115,7 +126,6 @@ if __name__ == "__main__":
             
             train = pd.read_csv(f"{dir}/data/{name}/train.csv").dropna()
             test = pd.read_csv(f"{dir}/data/{name}/test.csv").dropna()
-
 
             print(f"LENGTH TRAIN: {len(train)} - LENGTH TEST {len(test)}")
             print("------------------------------------------------------------------------\n")
