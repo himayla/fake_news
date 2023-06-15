@@ -10,7 +10,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from torch.utils.data import Dataset, DataLoader
 import re
 
-DATASET = "liar_1000"
+DATASET = "sample"
 BATCH_SIZE = 100
 MAX_SECTION = 300
 
@@ -110,16 +110,16 @@ def run(data, type):
     return result
 
 if __name__ == "__main__":
-    torch.cuda.empty_cache()
-    print(f"CUDA device: {torch.cuda.get_device_name(torch.cuda.current_device())}")
+    #torch.cuda.empty_cache()
+    #print(f"CUDA device: {torch.cuda.get_device_name(torch.cuda.current_device())}")
     tokenizer = AutoTokenizer.from_pretrained("databricks/dolly-v2-12b", padding_side="left")
-    model = AutoModelForCausalLM.from_pretrained("databricks/dolly-v2-12b", device_map="auto", torch_dtype=torch.bfloat16).to("cuda")
+    model = AutoModelForCausalLM.from_pretrained("databricks/dolly-v2-12b", device_map="auto", torch_dtype=torch.bfloat16)#.to("cuda")
     generate_text = InstructionTextGenerationPipeline(model=model, tokenizer=tokenizer)
 
     dir = f"pipeline/argumentation-based"
     for name in os.listdir(f"{dir}/data"):
 
-        step = 3
+        step = 0
         if name != ".DS_Store" and name == DATASET:
             print(f"DATASET: {name}")
             print("--------------------------------------------------------------------\n")
