@@ -1,3 +1,6 @@
+#
+# File contains cleaning for loader
+#
 import contextualSpellCheck
 import enchant
 import nltk
@@ -58,10 +61,7 @@ def correct_spelling(words):
 def replace_money_amounts(text):
     replaced_text = re.sub(r"\$([\d,.]+)", replace_match, text)
 
-    # print(replaced_text)
-
     return replaced_text
-
 
 def replace_match(match):
     amount = match.group(1)
@@ -71,15 +71,17 @@ def replace_match(match):
         amount = amount.replace(',', '') + ' dollars'
     return amount
 
-def clean_text(raw_txt, dir):
+def clean_text(raw_txt, mode):
 
-    replacements = load_replacements(f'{dir}/replacements.txt')
+    replacements = load_replacements(f'{mode}/replacements.txt')
 
-    if 'text-based' in dir:
+    if 'text-based' == mode:
+        for pattern in replacements:
+            raw_txt = re.sub(pattern, '', raw_txt)
         words = word_tokenize(raw_txt)
         corrected_words = correct_spelling(words)
-        words = [stemmer.stem(w) for w in corrected_words]
-        # Argumentation based
+        words = [stemmer.stem(w) for w in corrected_words if w not in stop_words]
+        clean_txt = ' '.join(words)
     else:
         # Remove patterns from replacements.txt
         for pattern in replacements:
@@ -177,8 +179,8 @@ def clean_text(raw_txt, dir):
 
         clean_txt = '. '.join(sentences)
 
-    # Make sure all txts end with a full stop
-    if not clean_txt.endswith('.'):
-        clean_txt = clean_txt + '.'
+        # Make sure all txts end with a full stop
+        if not clean_txt.endswith('.'):
+            clean_txt = clean_txt + '.'
 
     return clean_txt

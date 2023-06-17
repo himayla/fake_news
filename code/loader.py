@@ -51,7 +51,7 @@ def load_fake(path):
     # Remove metadata from datasets
     fake_real = fake_real.drop(columns=["idd", "title"])
 
-    fake_real = fake_real.sample(n=1000, replace=False)
+    fake_real = fake_real.sample(n=1000, random_state=42, replace=False)
 
 
     fake_real.dropna(inplace=True)
@@ -67,7 +67,7 @@ def load_liar(path):
 
     liar = pd.concat([liar_train, liar_valid, liar_test]).reset_index(drop=True)
 
-    liar = liar.sample(n=1000, replace=False)
+    liar = liar.sample(n=1000, random_state=42, replace=False)
 
     # Convert labels
     liar["label"] = liar["label"].map({
@@ -101,7 +101,7 @@ def load_kaggle(path):
 
     kaggle = pd.concat([df_real, df_fake], ignore_index=True)
 
-    kaggle = kaggle.sample(n=1000, replace=False)
+    kaggle = kaggle.sample(n=1000, random_state=42, replace=False)
     
     kaggle = kaggle[["text", "label"]]
 
@@ -112,5 +112,5 @@ def load_kaggle(path):
     return kaggle
 
 if __name__ == "__main__":
-    # load_data(original_dir="data", clean_dir="pipeline/text-based/data")
-    load_data(original_dir="data", clean_dir="pipeline/argumentation-based/data")
+    load_data(original_dir="data", clean_dir="pipeline/text-based/data")
+    #load_data(original_dir="data", clean_dir="pipeline/argumentation-based/data")

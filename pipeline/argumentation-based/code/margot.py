@@ -18,9 +18,11 @@ def create_folders(name: str):
         shutil.rmtree(path_to_temp_dir)
     os.makedirs(f"{path_to_temp_dir}/news/train")
     os.makedirs(f"{path_to_temp_dir}/news/test")
+    os.makedirs(f"{path_to_temp_dir}/news/validation")
 
     os.makedirs(f"{path_to_temp_dir}/arguments/train")
     os.makedirs(f"{path_to_temp_dir}/arguments/test")
+    os.makedirs(f"{path_to_temp_dir}/arguments/validation")
 
     if not os.path.exists(results_path):
         os.makedirs(results_path)
@@ -91,6 +93,7 @@ def parse_output(type: str) -> pd.DataFrame:
             type = string with e.g.: train, test.
     """
     claim_evidence = {}
+    
     for dir in sorted(os.listdir(f"{path_to_temp_dir}/arguments/{type}"), key=lambda x: int(x.split('.')[0])):
         with open(f"{path_to_temp_dir}/arguments/{type}/{dir}/OUTPUT.json") as json_file:
             doc = json.loads(json_file.read())
@@ -164,11 +167,13 @@ if __name__ == "__main__":
             step, counter = 0, 0
     
             train = pd.read_csv(f"{path_to_data}/{name}/train.csv").dropna()
+            val = pd.read_csv(f"{path_to_data}/{name}/validation.csv").dropna()
             test = pd.read_csv(f"{path_to_data}/{name}/test.csv").dropna()
 
-            print(f"DATASET: {name} - LENGTH TRAIN: {len(train)}")
+            print(f"DATASET: {name} - LENGTH TRAIN: {len(train)} - LENGTH VALIDATION: {len(val)} - LENGTH TEST: {len(test)}")
             print("------------------------------------------------------------------------\n")
 
             # Convert news values out to documents
-            run(train, name, "train")
-            run(test, name, "test")
+            # run(train, name, "train")
+            # run(test, name, "test")
+            run(val, name, "validation")

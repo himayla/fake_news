@@ -1,6 +1,8 @@
 #https://github.com/allenai/allennlp-template-python-script/blob/master/my_project/model.py
-#http://www.realworldnlpbook.com/blog/training-sentiment-analyzer-using-allennlp.html #https://github.com/mhagiwara/realworldnlp/blob/master/examples/sentiment/sst_classifier_elmo.py
+#http://www.realworldnlpbook.com/blog/training-sentiment-analyzer-using-allennlp.html 
+#https://github.com/mhagiwara/realworldnlp/blob/master/examples/sentiment/sst_classifier_elmo.py
 
+import argparse
 from allennlp.data import DataLoader, DatasetReader, Vocabulary
 from allennlp.data.token_indexers.elmo_indexer import ELMoTokenCharactersIndexer
 from allennlp.data.data_loaders import MultiProcessDataLoader
@@ -11,15 +13,13 @@ from allennlp.models import Model
 from allennlp.training.trainer import Trainer
 from allennlp.training import GradientDescentTrainer
 from allennlp.training.optimizers import AdamOptimizer
-from itertools import chain
-from typing import Tuple
-import os
-from dataset_reader import ClassificationCsvReader
-from model import LSTM_Classifier
-import argparse
-import torch
-import pandas as pd
 from allennlp.training.callbacks import TensorBoardCallback
+from dataset_reader import ClassificationCsvReader
+from itertools import chain
+from model import LSTM_Classifier
+import os
+import pandas as pd
+from typing import Tuple
 
 def build_dataset_reader() -> DatasetReader:
     elmo_token_indexer = ELMoTokenCharactersIndexer()
@@ -66,7 +66,6 @@ def build_trainer(
     dev_loader: DataLoader,
     callbacks: list,
     name: str) -> Trainer:
-
     
     parameters = [(n, p) for n, p in model.named_parameters() if p.requires_grad]
     optimizer = AdamOptimizer(parameters)
@@ -75,7 +74,7 @@ def build_trainer(
 
     trainer = GradientDescentTrainer(
         model=model,
-        serialization_dir=f"models/{mode}/{tool}/elmo/{name}",
+        serialization_dir=f"models/{mode}/elmo/{name}",
         data_loader=train_loader,
         validation_data_loader=dev_loader,
         num_epochs=10,
@@ -98,50 +97,53 @@ if __name__ == "__main__":
 
     mode = args.mode
 
-    if args.mode == "t":
+    if args.mode == "text-based":
         mode = "text-based"
         dir = f"pipeline/{mode}/data"
     elif args.mode == "margot":
         mode = "argumentation-based"
         dir = f"pipeline/{mode}/argumentation structure/margot"
-        tool = "margot-evidence"
+        # tool = "margot-evidence"
         columns = ["ID", "evidence", "label"]
     elif args.mode == "dolly":
         mode = "argumentation-based"
         dir = f"pipeline/{mode}/argumentation structure/dolly" 
-        tool = "dolly"
+        # tool = "dolly"
 
     print(f"MODE {mode}")
     print("------------------------------------------------------------------------\n")
 
     for name in os.listdir(dir):
         if os.path.isdir(f"{dir}/{name}"):
-            if name == "liar":
-                reader = build_dataset_reader()
 
-                train = pd.read_csv(f"{dir}/{name}/train.csv").dropna()
-                test = pd.read_csv(f"{dir}/{name}/test.csv").dropna()
+            print(f"DATASET: {name}")
+            print("------------------------------------------------------------------------\n")
 
-                if not args.mode == "t":
-                    train = train.loc[:, columns]
-                    test = test.loc[:, columns]
+            reader = build_dataset_reader()
 
-                train_loader, test_loader = build_data_loaders(
-                    reader, train, test
-                )
+            train = pd.read_csv(f"{dir}/{name}/train.csv").dropna()
+            validation = pd.read_csv(f"{dir}/{name}/validation.csv").dropna()
 
-                vocab = build_vocab(train_loader, test_loader)
-                model = build_model(vocab)
+            # if not args.mode != "text-based":
+            #     train = train.loc[:, columns]
+            #     validation = validation.loc[:, columns]
 
-                train_loader.index_with(vocab)
-                test_loader.index_with(vocab)
+            train_loader, validation_loader = build_data_loaders(
+                reader, train, validation
+            )
 
-                tensorboard_callback = TensorBoardCallback(serialization_dir=f"models/{mode}/{tool}/elmo/{name}/")
+            vocab = build_vocab(train_loader, validation_loader)
+            model = build_model(vocab)
 
-                callbacks = [tensorboard_callback]
+            train_loader.index_with(vocab)
+            validation_loader.index_with(vocab)
 
-                trainer = build_trainer(model, train_loader, test_loader, callbacks, name)
+            tensorboard_callback = TensorBoardCallback(serialization_dir=f"models/{mode}/elmo/{name}/")
 
-                print("Starting training")
-                trainer.train()
-                print("Finished training")
+            callbacks = [tensorboard_callback]
+
+            trainer = build_trainer(model, train_loader, validation_loader, callbacks, name)
+
+            print("START TRAINING")
+            trainer.train()
+            print("FINISH TRAINING")

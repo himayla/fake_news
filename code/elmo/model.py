@@ -6,8 +6,6 @@ from allennlp.models import Model
 from allennlp.modules import TextFieldEmbedder, Seq2VecEncoder
 from allennlp.nn import util
 from allennlp.training.metrics import CategoricalAccuracy, F1Measure
-import numpy as np
-#from allennlp.training.metrics.fbeta_measure import FBetaMeasure
 
 @Model.register("LSTM_Classifier")
 class LSTM_Classifier(Model):
@@ -63,12 +61,3 @@ class LSTM_Classifier(Model):
         }
 
         return metrics
-
-        # metric = super().get_metric(reset=reset)
-        # # Because we just care about the class `positive_label`
-        # # there is just one item in `precision`, `recall`, `fscore`
-        # precision = metric["precision"][0]
-        # recall = metric["recall"][0]
-        # f1 = metric["fscore"][0]
-        # accuracy = self.accuracy.get_metric(reset)
-        # return {"precision": precision, "recall": recall, "f1": f1, "accuracy":accuracy}

@@ -1,0 +1,6 @@
+allennlp==2.10.1
+datasets==2.7.1
+pandas
+numpy
+--extra-index-url https://download.pytorch.org/whl/cu113
+torch==1.11.0+cu113
