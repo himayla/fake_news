@@ -1,0 +1,16 @@
+data/
+.DS_Store
+am/
+__pycache__/
+env/
+models/
+temp/
+scripts/
+output/
+.pytest_cache
+archive/
+results/
+tools/
+environments/
+pipeline/argumentation-based/argumentation structure/*
+figures/
