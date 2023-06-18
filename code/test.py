@@ -6,8 +6,11 @@ import pandas as pd
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, ElectraTokenizer, ElectraForSequenceClassification
 import torch
 import json
+from datetime import datetime
 
-all_models = ["bert-base-uncased", "roberta-base", "distilbert-base-uncased", "google/electra-base-discriminator", "elmo"]
+
+all_models = ["elmo"]
+#["bert-base-uncased", "roberta-base", "distilbert-base-uncased", "google/electra-base-discriminator", "elmo"]
 mode = "text-based"
 
 def predict(row):
@@ -22,8 +25,9 @@ if __name__ == "__main__":
     
     json_output = defaultdict(dict)
     for model_name in all_models:
-        print(f"MODEL: {model_name}")
-        print("------------------------------------------------------------------------")
+        current_time = datetime.now()
+
+        print(f"{model_name} - START: {current_time.hour}:{current_time.minute}")
         
         # if mode == "argumentation-based":
         #     path = f"models/{mode}/argumentation structure/{model_name}"
@@ -31,7 +35,7 @@ if __name__ == "__main__":
         performance = {}
         path = f"pipeline/{mode}/data"
         for dataset in os.listdir(path):
-            if os.path.isdir(f"{path}/{dataset}"):
+            if os.path.isdir(f"{path}/{dataset}") and dataset != "kaggle_1000":
 
                 path_to_model = f"models/{mode}/{model_name}/{dataset}"
 
@@ -49,7 +53,7 @@ if __name__ == "__main__":
                     else:
                         model = AutoModelForSequenceClassification.from_pretrained(path_to_model)
 
-                df_test = pd.read_csv(f"{path}/{dataset}/test.csv").dropna()
+                df_test = pd.read_csv(f"{path}/{dataset}/test.csv").dropna()[:50]
                 print(f"DATASET: {dataset} - LENGTH: {len(df_test)}")
                 print("------------------------------------------------------------------------")
 

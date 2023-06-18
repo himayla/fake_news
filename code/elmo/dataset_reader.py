@@ -29,8 +29,13 @@ class ClassificationCsvReader(DatasetReader):
         fields: Dict[str, Field] = {"text": text_field}
         if label:
             fields["label"] = LabelField(label)
-        return Instance(fields)
 
+        return Instance(fields)
+    
     def _read(self, df) -> Iterable[Instance]:
-        for i in range(len(df)):
-            yield self.text_to_instance(df.iloc[i, 1], df.iloc[i, 2])
+        if "label" in list(df.columns):
+            for i in range(len(df)):
+                yield self.text_to_instance(df.iloc[i, 1], df.iloc[i, 2])
+        else:
+            for i in range(len(df)):
+                yield self.text_to_instance(df.loc[i, 'text'])

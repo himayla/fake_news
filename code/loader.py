@@ -30,8 +30,8 @@ def load_data(original_dir, clean_dir, limit=None):
                     break
                 df.loc[:, 'text'] = df.apply(lambda x: cleaner.clean_text(x["text"], clean_dir), axis=1)
     
-                train, test = train_test_split(df, test_size=0.2)
-                test, validation = train_test_split(test, test_size=0.25)
+                train, validation = train_test_split(df, test_size=0.2)
+                validation, test = train_test_split(test, test_size=0.25)
 
                 print(f"TRAIN - # FAKE: {len(train[train['label'] == 'FAKE'])} - # REAL:{len(train[train['label'] == 'REAL'])}")
                 print("------------------------------------------------------------------------")

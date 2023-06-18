@@ -50,10 +50,10 @@ if __name__ == "__main__":
         path = f"pipeline/{mode}/data"
     elif args.mode == "margot":
         specs = "structure"
-        mode = f"argumentation-based/margot"
+        mode = f"argumentation-based"
         path = f"pipeline/{mode}/argumentation structure/margot"
     elif args.mode == "dolly":
-        mode = "argumentation-based/dolly"
+        mode = "argumentation-based"
         path = f"pipeline/{mode}/argumentation structure/dolly" 
 
 

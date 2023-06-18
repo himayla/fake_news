@@ -20,6 +20,7 @@ from model import LSTM_Classifier
 import os
 import pandas as pd
 from typing import Tuple
+import torch
 
 def build_dataset_reader() -> DatasetReader:
     elmo_token_indexer = ELMoTokenCharactersIndexer()
@@ -51,7 +52,7 @@ def build_model(vocab: Vocabulary) -> Model:
 def build_data_loaders(
     reader,
     train_data: str,
-    validation_data_path: str,) -> Tuple[DataLoader, DataLoader]:
+    validation_data_path: str= None,) -> Tuple[DataLoader, DataLoader]:
     train_loader = MultiProcessDataLoader(
         reader, train_data, batch_size=32, shuffle=True
     )
@@ -59,6 +60,9 @@ def build_data_loaders(
         reader, validation_data_path, batch_size=32, shuffle=False
     )
     return train_loader, dev_loader
+
+
+
 
 def build_trainer(
     model: Model,
@@ -81,7 +85,8 @@ def build_trainer(
         optimizer=optimizer,
         validation_metric="-loss",
         callbacks=callbacks,
-        patience=1
+        patience=1,
+
     )
     return trainer
 
@@ -133,6 +138,7 @@ if __name__ == "__main__":
             )
 
             vocab = build_vocab(train_loader, validation_loader)
+
             model = build_model(vocab)
 
             train_loader.index_with(vocab)
@@ -146,4 +152,6 @@ if __name__ == "__main__":
 
             print("START TRAINING")
             trainer.train()
+            torch.save(model, f"models/{mode}/elmo/{name}/pytorch_model.bin")
             print("FINISH TRAINING")
+
