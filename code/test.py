@@ -11,7 +11,6 @@ from datetime import datetime
 
 ELEMENT = 'claim'
 
-
 all_models = ["bert-base-uncased", "roberta-base", "distilbert-base-uncased", "google/electra-base-discriminator"]
 
 def predict(row):
