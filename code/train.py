@@ -11,11 +11,12 @@ import os
 import pandas as pd
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, ElectraTokenizer, ElectraForSequenceClassification
 from transformers import EarlyStoppingCallback, TrainingArguments, Trainer, DataCollatorWithPadding
-from torch.utils.tensorboard import SummaryWriter
+#from torch.utils.tensorboard import SummaryWriter
 import torch
 import torch.nn as nn
 
 all_models = ["bert-base-uncased", "roberta-base", "distilbert-base-uncased", "google/electra-base-discriminator"]
+specs = "claim"
 
 def preprocess_function(news):
     if mode.startswith("argumentation-based"):
@@ -49,7 +50,6 @@ if __name__ == "__main__":
     if args.mode == "text-based":
         path = f"pipeline/{mode}/data"
     elif args.mode == "margot":
-        specs = "structure"
         mode = f"argumentation-based"
         path = f"pipeline/{mode}/argumentation structure/margot"
     elif args.mode == "dolly":
@@ -111,10 +111,10 @@ if __name__ == "__main__":
                 # Save predictions
                 all_predictions = []
 
-                output_path = f"models/{mode}/{model_name}/{name}"
+                output_path = f"models/training/{mode}/{model_name}/{name}"
 
                 if args.mode == 'margot':
-                    output_path = f"models/{mode}/{specs}/{model_name}/{name}"
+                    output_path = f"models/training/{mode}/{specs}/{model_name}/{name}"
 
 
                 # Documentation: https://huggingface.co/transformers/v3.0.2/main_classes/trainer.html
@@ -127,7 +127,7 @@ if __name__ == "__main__":
                     save_strategy="epoch",
                     optim="adamw_torch",
                     num_train_epochs=10,
-                    logging_dir=f"{output_path}/logs",  # Directory where training logs will be saved
+                    #logging_dir=f"{output_path}/logs",  # Directory where training logs will be saved
                     report_to="tensorboard",
                     adam_epsilon=1e-8,  # Epsilon value for Adam optimizer
                     load_best_model_at_end=True,  # Load the best model at the end of training
@@ -158,21 +158,27 @@ if __name__ == "__main__":
                     callbacks=[early_stop]
                     )
                 
-                writer = SummaryWriter(log_dir=training_args.logging_dir)
+                #writer = SummaryWriter(log_dir=training_args.logging_dir)
 
                 print("START TRAINING")
                 print("------------------------------------------------------------------------\n")
 
                 result = trainer.train()
                 print_summary(result)
-                trainer.save_model()
-                trainer.evaluate()
-                writer.close()
+
+                final_model_output_path = f"models/{mode}/best/{model_name}/{name}"
+
+                if args.mode == 'margot':
+                    final_model_output_path = f"models/{mode}/{specs}/best/{model_name}/{name}"
+
+                trainer.save_model(f"{final_model_output_path}")
+                # trainer.evaluate()
+                # #writer.close()
 
 
-                with open(f"{output_path}/predictions.txt", "w") as f:
-                    for idx, pred in enumerate(all_predictions):
-                        f.write(f"epoch {idx}: {pred}\n")
-                print("------------------------------------------------------------------------\n")
-                print()
+                # with open(f"{output_path}/predictions.txt", "w") as f:
+                #     for idx, pred in enumerate(all_predictions):
+                #         f.write(f"epoch {idx}: {pred}\n")
+                # print("------------------------------------------------------------------------\n")
+                # print()
 

@@ -22,6 +22,8 @@ import pandas as pd
 from typing import Tuple
 import torch
 
+ELEMENT = 'structure'
+
 def build_dataset_reader() -> DatasetReader:
     elmo_token_indexer = ELMoTokenCharactersIndexer()
     reader = ClassificationCsvReader(token_indexers={"tokens": elmo_token_indexer})
@@ -76,9 +78,15 @@ def build_trainer(
     
     model = model.to("cuda")
 
+    output_path = f"models/training/{mode}/elmo/{name}"
+
+    if args.mode == 'margot':
+        output_path = f"models/training/{mode}/{specs}/elmo/{name}"
+
+
     trainer = GradientDescentTrainer(
         model=model,
-        serialization_dir=f"models/{mode}/elmo/{name}",
+        serialization_dir=output_path,
         data_loader=train_loader,
         validation_data_loader=dev_loader,
         num_epochs=10,
@@ -108,7 +116,8 @@ if __name__ == "__main__":
     elif args.mode == "margot":
         mode = "argumentation-based"
         dir = f"pipeline/{mode}/argumentation structure/margot"
-        columns = ["ID", "structure", "label"]
+        specs = ELEMENT
+        columns = ["ID", ELEMENT, "label"]
     elif args.mode == "dolly":
         mode = "argumentation-based"
         dir = f"pipeline/{mode}/argumentation structure/dolly" 
@@ -151,6 +160,12 @@ if __name__ == "__main__":
 
             print("START TRAINING")
             trainer.train()
-            torch.save(model, f"models/{mode}/elmo/{name}/pytorch_model.bin")
+
+            final_model_output_path = f"models/{mode}/best/elmo/{name}"
+
+            if args.mode == 'margot':
+                final_model_output_path = f"models/{mode}/{specs}/best/elmo/{name}"
+
+            torch.save(model, final_model_output_path)
             print("FINISH TRAINING")
 

@@ -1,0 +1,22 @@
+{
+    "elmo": {
+        "kaggle_1000": {
+            "accuracy": 0.8,
+            "precision": 1.0,
+            "recall": 0.6666666666666666,
+            "f1": 0.8
+        },
+        "fake_real_1000": {
+            "accuracy": 0.8,
+            "precision": 0.6666666666666666,
+            "recall": 1.0,
+            "f1": 0.8
+        },
+        "liar_1000": {
+            "accuracy": 1.0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+        }
+    }
+}
