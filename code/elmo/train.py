@@ -22,7 +22,7 @@ import pandas as pd
 from typing import Tuple
 import torch
 
-ELEMENT = 'structure'
+ELEMENT = 'claim'
 
 def build_dataset_reader() -> DatasetReader:
     elmo_token_indexer = ELMoTokenCharactersIndexer()
@@ -70,7 +70,6 @@ def build_trainer(
     model: Model,
     train_loader: DataLoader,
     dev_loader: DataLoader,
-    callbacks: list,
     name: str) -> Trainer:
     
     parameters = [(n, p) for n, p in model.named_parameters() if p.requires_grad]
@@ -78,10 +77,10 @@ def build_trainer(
     
     model = model.to("cuda")
 
-    output_path = f"models/training/{mode}/elmo/{name}"
+    output_path = f"models/{mode}/training/elmo/{name}"
 
-    if args.mode == 'margot':
-        output_path = f"models/training/{mode}/{specs}/elmo/{name}"
+    if mode == 'argumentation-based':
+        output_path = f"models/{mode}/{args.mode}/{specs}/training/elmo/{name}"
 
 
     trainer = GradientDescentTrainer(
@@ -92,7 +91,6 @@ def build_trainer(
         num_epochs=10,
         optimizer=optimizer,
         validation_metric="-loss",
-        callbacks=callbacks,
         patience=1,
 
     )
@@ -120,8 +118,9 @@ if __name__ == "__main__":
         columns = ["ID", ELEMENT, "label"]
     elif args.mode == "dolly":
         mode = "argumentation-based"
-        dir = f"pipeline/{mode}/argumentation structure/dolly" 
-        # tool = "dolly"
+        dir = f"pipeline/{mode}/argumentation structure/dolly"
+        specs = ELEMENT
+        columns = ["ID", ELEMENT, "label"]
 
     print(f"MODE {mode}")
     print("------------------------------------------------------------------------\n")
@@ -137,9 +136,12 @@ if __name__ == "__main__":
             train = pd.read_csv(f"{dir}/{name}/train.csv").dropna()
             validation = pd.read_csv(f"{dir}/{name}/validation.csv").dropna()
 
-            if not args.mode != "text-based":
+            if args.mode != "text-based":
                 train = train.loc[:, columns]
                 validation = validation.loc[:, columns]
+
+            train['label'] = train['label'].apply(lambda x: 'FAKE' if x == 0 else ('REAL' if x == 1 else x))
+            validation['label'] = validation['label'].apply(lambda x: 'FAKE' if x == 0 else ('REAL' if x == 1 else x))
 
             train_loader, validation_loader = build_data_loaders(
                 reader, train, validation
@@ -152,20 +154,23 @@ if __name__ == "__main__":
             train_loader.index_with(vocab)
             validation_loader.index_with(vocab)
 
-            tensorboard_callback = TensorBoardCallback(serialization_dir=f"models/{mode}/elmo/{name}/")
+            # tensorboard_callback = TensorBoardCallback(serialization_dir=f"models/{mode}/elmo/{name}/")
 
-            callbacks = [tensorboard_callback]
+            # callbacks = [tensorboard_callback]
 
-            trainer = build_trainer(model, train_loader, validation_loader, callbacks, name)
+            trainer = build_trainer(model, train_loader, validation_loader, name)
 
             print("START TRAINING")
             trainer.train()
 
             final_model_output_path = f"models/{mode}/best/elmo/{name}"
 
-            if args.mode == 'margot':
-                final_model_output_path = f"models/{mode}/{specs}/best/elmo/{name}"
+            if mode == 'argumentation-based':
+                final_model_output_path = f"models/{mode}/{args.mode}/{specs}/best/elmo/{name}"
 
-            torch.save(model, final_model_output_path)
+            if not os.path.exists(final_model_output_path):
+                os.makedirs(f"{final_model_output_path}")
+
+            torch.save(model, f"{final_model_output_path}/pytorch_model.bin")
             print("FINISH TRAINING")
 

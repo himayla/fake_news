@@ -9,6 +9,8 @@ import torch
 import json
 from datetime import datetime
 
+ELEMENT = 'claim'
+
 
 all_models = ["bert-base-uncased", "roberta-base", "distilbert-base-uncased", "google/electra-base-discriminator"]
 
@@ -29,11 +31,17 @@ if __name__ == "__main__":
 
     if args.mode == "text-based":
         mode = "text-based"
+        dir = f"pipeline/{mode}/data"
     elif args.mode == "margot":
-        specs = "structure"
-        mode = f"argumentation-based"
+        mode = "argumentation-based"
+        dir = f"pipeline/{mode}/argumentation structure/margot"
+        specs = ELEMENT
+        columns = ["ID", ELEMENT, "label"]
     elif args.mode == "dolly":
         mode = "argumentation-based"
+        dir = f"pipeline/{mode}/argumentation structure/dolly"
+        specs = ELEMENT
+        columns = ["ID", ELEMENT, "label"]
 
     print(f"MODE {mode}")
     print("------------------------------------------------------------------------\n")
@@ -48,12 +56,22 @@ if __name__ == "__main__":
         
         performance = {}
         path = f"pipeline/{mode}/data"
+
+        path_to_results = f"pipeline/{mode}/results/csv/{model_name}_{dataset}.csv"
+
+        if mode == 'argumentation-based':
+            path_to_results = f"pipeline/{mode}/{args.mode}/{specs}/results/"
+
+        path_to_model = f"models/{mode}/{args.mode}/{specs}/best/{model_name}/{model_name}"
+
         for dataset in os.listdir(path):
+
             if os.path.isdir(f"{path}/{dataset}"):
 
-                path_to_model = f"models/{mode}/{model_name}/{dataset}"
-                if args.mode == "margot":
-                    path = f"models/{mode}/{specs}/{model_name}"
+                path_to_model = f"models/{mode}/best/{model_name}/{model_name}"
+
+                if mode == 'argumentation-based':
+                    path_to_model = f"models/{mode}/{args.mode}/{specs}/best/{model_name}/{model_name}"
     
                 if model_name == "google/electra-base-discriminator":
                     tokenizer = ElectraTokenizer.from_pretrained(model_name, truncation=True, padding='max_length', max_length=300, return_tensors="pt")
@@ -95,6 +113,8 @@ if __name__ == "__main__":
                 json_output[model_name][dataset] = results
 
                 table = pd.DataFrame(performance)
+
+
 
                 table.to_csv(f"pipeline/{mode}/results/csv/{model_name}_{dataset}.csv", index_label=model_name)
 

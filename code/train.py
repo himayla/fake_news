@@ -77,8 +77,17 @@ if __name__ == "__main__":
                 print(f"DATASET: {name}")
                 print("------------------------------------------------------------------------\n")
 
+                # 4 is random
+                df_train['label'] = df_train['label'].apply(lambda x: 'FAKE' if x == 0 else ('REAL' if x == 1 else x))
+                df_val['label'] = df_val['label'].apply(lambda x: 'FAKE' if x == 0 else ('REAL' if x == 1 else x))
+
+
+
                 train = Dataset.from_pandas(df_train).class_encode_column("label")
                 validation = Dataset.from_pandas(df_val).class_encode_column("label")
+
+
+                                
 
                 print(f"LOADING: {model_name}")
                 print("------------------------------------------------------------------------\n")
@@ -111,10 +120,10 @@ if __name__ == "__main__":
                 # Save predictions
                 all_predictions = []
 
-                output_path = f"models/training/{mode}/{model_name}/{name}"
+                output_path = f"models/{mode}/{model_name}/training/{name}"
 
-                if args.mode == 'margot':
-                    output_path = f"models/training/{mode}/{specs}/{model_name}/{name}"
+                if mode == 'argumentation-based':
+                    output_path = f"models/{mode}/{args.mode}/{specs}/training/{model_name}/{name}"
 
 
                 # Documentation: https://huggingface.co/transformers/v3.0.2/main_classes/trainer.html
@@ -168,8 +177,12 @@ if __name__ == "__main__":
 
                 final_model_output_path = f"models/{mode}/best/{model_name}/{name}"
 
-                if args.mode == 'margot':
-                    final_model_output_path = f"models/{mode}/{specs}/best/{model_name}/{name}"
+                if mode == 'argumentation-based':
+                    final_model_output_path = f"models/{mode}/{args.mode}/{specs}/best/{model_name}/{name}"
+
+
+                if not os.path.exists(final_model_output_path):
+                    os.makedirs(f"{final_model_output_path}")
 
                 trainer.save_model(f"{final_model_output_path}")
                 # trainer.evaluate()
