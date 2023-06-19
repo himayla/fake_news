@@ -13,7 +13,7 @@ import re
 
 DATASET = "fake_real_1000"
 BATCH_SIZE = 25
-MAX_SECTION = 10000
+MAX_SECTION = 300
 
 class NewsDataset(Dataset):
     def __init__(self, data):
@@ -51,14 +51,14 @@ class NewsDataset(Dataset):
                 try:
                     claim_responses = generate_text(claim_prompt)
                     evidence_responses = generate_text(evidence_prompt)
+                    claim_response = re.sub(r'\"\"\"', '"', claim_responses[0]["response"])
+                    evidence_response = re.sub(r'\"\"\"', '"', evidence_responses[0]["response"])
                 except RuntimeError:
                     print(section)
-                    print(batch["id"])
+                    print(batch["ID"])
+                    claim_response = "<unk>"
+                    evidence_response = "<unk>"
             
-                claim_response = re.sub(r'\"\"\"', '"', claim_responses[0]["response"])
-                evidence_response = re.sub(r'\"\"\"', '"', evidence_responses[0]["response"])
-
-
                 section_claims.append(claim_response)
                 section_evidences.append(evidence_response)
 
@@ -75,16 +75,20 @@ class NewsDataset(Dataset):
 
 
 def divide(news):
+    print("DIVIDE NEWS ARTICLE")
+    print("-------------------------------------------------------------------\n")
+    sentences = sent_tokenize(news)
     sections = []
     current_section = ''
-    for sentence in sent_tokenize(news):
-        if len(current_section) + len(sentence) <= MAX_SECTION:
+    for sentence in sentences:
+        if len(nltk.word_tokenize(current_section + ' ' + sentence)) <= MAX_SECTION:
             current_section += ' ' + sentence
         else:
             sections.append(current_section.strip())
             current_section = sentence
     sections.append(current_section.strip())
     return sections
+
 
 def run(data, type):
     global step
@@ -124,14 +128,14 @@ if __name__ == "__main__":
     dir = f"pipeline/argumentation-based"
     for name in os.listdir(f"{dir}/data"):
 
-        step = 4
+        step = 0
         if name != ".DS_Store" and name == DATASET:
             print(f"DATASET: {name}")
             print("--------------------------------------------------------------------\n")
             
-            train = pd.read_csv(f"{dir}/data/{name}/train.csv").dropna()[500:]
+            train = pd.read_csv(f"{dir}/data/{name}/train.csv").dropna()
             val = pd.read_csv(f"{dir}/data/{name}/validation.csv").dropna()
-            test = pd.read_csv(f"{dir}/data/{name}/test.csv").dropna()
+            test = pd.read_csv(f"{dir}/data/{name}/test.csv").dropna()[:50]
 
             print(f"LENGTH TRAIN: {len(train)} - LENGTH VAL: {len(val)} - LENGTH TEST {len(test)}")
             print("------------------------------------------------------------------------\n")
@@ -144,6 +148,6 @@ if __name__ == "__main__":
             if not os.path.exists(f"{p}/{name}"):
                 os.makedirs(f"{p}/{name}")
 
-            run(train, "train")
-            run(val, "val")
+            # run(train, "train")
+            run(val, "validation")
             run(test, "test")

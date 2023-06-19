@@ -108,8 +108,7 @@ if __name__ == "__main__":
     elif args.mode == "margot":
         mode = "argumentation-based"
         dir = f"pipeline/{mode}/argumentation structure/margot"
-        # tool = "margot-evidence"
-        columns = ["ID", "evidence", "label"]
+        columns = ["ID", "structure", "label"]
     elif args.mode == "dolly":
         mode = "argumentation-based"
         dir = f"pipeline/{mode}/argumentation structure/dolly" 
@@ -129,9 +128,9 @@ if __name__ == "__main__":
             train = pd.read_csv(f"{dir}/{name}/train.csv").dropna()
             validation = pd.read_csv(f"{dir}/{name}/validation.csv").dropna()
 
-            # if not args.mode != "text-based":
-            #     train = train.loc[:, columns]
-            #     validation = validation.loc[:, columns]
+            if not args.mode != "text-based":
+                train = train.loc[:, columns]
+                validation = validation.loc[:, columns]
 
             train_loader, validation_loader = build_data_loaders(
                 reader, train, validation

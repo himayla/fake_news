@@ -15,6 +15,7 @@ import json
 import os
 import pandas as pd
 import torch
+import numpy as np
 
 MODE = 'text-based'
 metric = evaluate.combine(["accuracy", "precision", "recall", "f1"])
@@ -82,7 +83,7 @@ for dataset in os.listdir(path):
         model.eval()
 
         # Load test set
-        df_test = pd.read_csv(f"{path}/{dataset}/test.csv").dropna()[:50]
+        df_test = pd.read_csv(f"{path}/{dataset}/test.csv").dropna()[:25]
         print(f"DATASET: {dataset} - LENGTH: {len(df_test)}")
         print("------------------------------------------------------------------------")
         
@@ -102,23 +103,15 @@ for dataset in os.listdir(path):
 
         predictor = FakeNewsClassifierPredictor(model, reader)
 
-        # output = predictor.predict("A good movie!") # Sanity check
-
-        # print(
-        #     [
-        #         (vocab.get_token_from_index(label_id, "labels"), prob)
-        #         for label_id, prob in enumerate(output["probs"])
-        #     ]
-        # )
-
-        # # Make predictions using the trained model
         counter = 0
         all_predictions = []
         for instance in test_loader.iter_instances():
             print(counter)
-            if counter == 10:
-                table = pd.DataFrame(performance)
-                table.to_csv(f"pipeline/{MODE}/results/csv/temp_elmo_{dataset}.csv")
+            if counter in np.arange(2, 50, 2):
+                results = metric.compute(predictions=all_predictions, references=gold_labels[:counter])
+
+                table = pd.DataFrame(results, index=[0]).T
+                table.to_csv(f"pipeline/{MODE}/results/csv/temp_elmo_{dataset}.csv", index_label='ELMo')
 
             output = predictor.predict_instance(instance)
             labels = [(vocab.get_token_from_index(label_id, "labels"), prob) for label_id, prob in enumerate(output["probs"])]
@@ -142,7 +135,7 @@ for dataset in os.listdir(path):
 
         table = pd.DataFrame(performance)
 
-        table.to_csv(f"pipeline/{MODE}/results/csv/elmo.csv")
+        table.to_csv(f"pipeline/{MODE}/results/csv/elmo.csv", index_label='ELMo')
 
-with open(f"pipeline/{MODE}/results/json/performance.json", 'w') as json_file:
+with open(f"pipeline/{MODE}/results/json/performance_elmo.json", 'w') as json_file:
     json.dump(json_output, json_file, indent=4)

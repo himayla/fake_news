@@ -170,7 +170,7 @@ if __name__ == "__main__":
                 writer.close()
 
 
-                with open(f"models/{mode}/{model_name}/{name}/predictions.txt", "w") as f:
+                with open(f"{output_path}/predictions.txt", "w") as f:
                     for idx, pred in enumerate(all_predictions):
                         f.write(f"epoch {idx}: {pred}\n")
                 print("------------------------------------------------------------------------\n")

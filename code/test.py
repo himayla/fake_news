@@ -1,4 +1,5 @@
 # Run predictions on test set
+import argparse
 from collections import defaultdict
 import evaluate
 import os
@@ -9,9 +10,7 @@ import json
 from datetime import datetime
 
 
-all_models = ["elmo"]
-#["bert-base-uncased", "roberta-base", "distilbert-base-uncased", "google/electra-base-discriminator", "elmo"]
-mode = "text-based"
+all_models = ["bert-base-uncased", "roberta-base", "distilbert-base-uncased", "google/electra-base-discriminator"]
 
 def predict(row):
     tokenized_text = tokenizer(row['text'], truncation=True,  return_tensors="pt")
@@ -21,6 +20,24 @@ def predict(row):
     return predicted_class    
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-m', '--mode', choices=['text-based', 'margot', 'dolly'], help="Select mode: 'text-based' for text-based, 'margot' for argumentation-based Margot, 'dolly' for argumentation-based Dolly")
+
+    args = parser.parse_args()
+
+    mode = args.mode
+
+    if args.mode == "text-based":
+        mode = "text-based"
+    elif args.mode == "margot":
+        specs = "structure"
+        mode = f"argumentation-based"
+    elif args.mode == "dolly":
+        mode = "argumentation-based"
+
+    print(f"MODE {mode}")
+    print("------------------------------------------------------------------------\n")
+
     metric = evaluate.combine(["accuracy", "precision", "recall", "f1"])
     
     json_output = defaultdict(dict)
@@ -29,16 +46,15 @@ if __name__ == "__main__":
 
         print(f"{model_name} - START: {current_time.hour}:{current_time.minute}")
         
-        # if mode == "argumentation-based":
-        #     path = f"models/{mode}/argumentation structure/{model_name}"
-
         performance = {}
         path = f"pipeline/{mode}/data"
         for dataset in os.listdir(path):
-            if os.path.isdir(f"{path}/{dataset}") and dataset != "kaggle_1000":
+            if os.path.isdir(f"{path}/{dataset}"):
 
                 path_to_model = f"models/{mode}/{model_name}/{dataset}"
-
+                if args.mode == "margot":
+                    path = f"models/{mode}/{specs}/{model_name}"
+    
                 if model_name == "google/electra-base-discriminator":
                     tokenizer = ElectraTokenizer.from_pretrained(model_name, truncation=True, padding='max_length', max_length=300, return_tensors="pt")
                     if torch.cuda.is_available():
@@ -80,11 +96,11 @@ if __name__ == "__main__":
 
                 table = pd.DataFrame(performance)
 
-                table.to_csv(f"pipeline/{mode}/results/csv/{model_name}_{dataset}.csv")
+                table.to_csv(f"pipeline/{mode}/results/csv/{model_name}_{dataset}.csv", index_label=model_name)
 
         table = pd.DataFrame(performance)
 
-        table.to_csv(f"pipeline/{mode}/results/csv/{model_name}.csv")
+        table.to_csv(f"pipeline/{mode}/results/csv/full/{model_name}.csv", index_label=model_name)
 
-    with open(f"pipeline/{mode}/results/json/performance.json", 'w') as json_file:
+    with open(f"pipeline/{mode}/results/json/performance_test.json", 'w') as json_file:
         json.dump(json_output, json_file, indent=4)
