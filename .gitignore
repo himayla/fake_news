@@ -12,3 +12,4 @@ tools/
 pipeline/argumentation-based/argumentation structure/*
 figures/
 results/
+local_env/
