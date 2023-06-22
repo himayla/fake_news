@@ -154,9 +154,6 @@ if __name__ == "__main__":
             train_loader.index_with(vocab)
             validation_loader.index_with(vocab)
 
-            # tensorboard_callback = TensorBoardCallback(serialization_dir=f"models/{mode}/elmo/{name}/")
-
-            # callbacks = [tensorboard_callback]
 
             trainer = build_trainer(model, train_loader, validation_loader, name)
 

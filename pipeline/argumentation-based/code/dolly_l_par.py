@@ -1,3 +1,4 @@
+import sys
 from datetime import datetime
 import os
 import pandas as pd
@@ -11,7 +12,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from torch.utils.data import Dataset, DataLoader
 import re
 
-DATASET = "fake_real_1000"
+DATASET = "liar"
 BATCH_SIZE = 100
 MAX_SECTION = 400
 
@@ -112,7 +113,7 @@ def run(data, type):
 
         step += 1
 
-    result  = pd.concat(processed)
+    result = pd.concat(processed)
     print(result.head()) 
 
     result.to_csv(f"{p}/{name}/{type}.csv", columns=["text", "claim", "evidence","structure", "label"])
@@ -120,6 +121,8 @@ def run(data, type):
     return result
 
 if __name__ == "__main__":
+    start = sys.argv[0]
+    stop = sys.argv[1]
 
     torch.cuda.empty_cache()
     print(f"CUDA device: {torch.cuda.get_device_name(torch.cuda.current_device())}")
@@ -130,26 +133,19 @@ if __name__ == "__main__":
     dir = f"pipeline/argumentation-based"
     for name in os.listdir(f"{dir}/data"):
 
-        step = 0
+        step = start / BATCH_SIZE
         if name != ".DS_Store" and name == DATASET:
             print(f"DATASET: {name}")
             print("--------------------------------------------------------------------\n")
             
-            train = pd.read_csv(f"{dir}/data/{name}/train.csv").dropna()
-            val = pd.read_csv(f"{dir}/data/{name}/validation.csv").dropna()
-            test = pd.read_csv(f"{dir}/data/{name}/test.csv").dropna()[:50]
+            train = pd.read_csv(f"{dir}/data/{name}/train.csv").dropna()[start:stop]
 
-            print(f"LENGTH TRAIN: {len(train)} - LENGTH VAL: {len(val)} - LENGTH TEST {len(test)}")
-            print("------------------------------------------------------------------------\n")
+            print(f"LENGTH TRAIN: {len(train)}")
             
             train = HF_Dataset.from_pandas(train, preserve_index=True).class_encode_column("label")
-            val = HF_Dataset.from_pandas(val, preserve_index=True).class_encode_column("label")
-            test = HF_Dataset.from_pandas(test, preserve_index=True).class_encode_column("label")
 
             p = f"{dir}/argumentation structure/dolly"
             if not os.path.exists(f"{p}/{name}"):
                 os.makedirs(f"{p}/{name}")
 
             run(train, "train")
-            run(val, "validation")
-            run(test, "test")

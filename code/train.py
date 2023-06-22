@@ -16,11 +16,11 @@ import torch
 import torch.nn as nn
 
 all_models = ["bert-base-uncased", "roberta-base", "distilbert-base-uncased", "google/electra-base-discriminator"]
-specs = "claim"
+ELEMENT = "structure"
 
 def preprocess_function(news):
-    if mode.startswith("argumentation-based"):
-        return tokenizer(news[specs], truncation=True) ### Claim, or evidence, or structure
+    if mode == "argumentation-based":
+        return tokenizer(news[ELEMENT], truncation=True) ### Claim, or evidence, or structure
     else:
         return tokenizer(news["text"], truncation=True)
 
@@ -41,7 +41,7 @@ def print_summary(result):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m', '--mode', choices=['text-based', 'margot', 'dolly'], help="Select mode: 'text-based' for text-based, 'margot' for argumentation-based Margot, 'dolly' for argumentation-based Dolly")
+    parser.add_argument('-m', '--mode', choices=['text-based', 'margot', 'dolly', 'sample'], help="Select mode: 'text-based' for text-based, 'margot' for argumentation-based Margot, 'dolly' for argumentation-based Dolly")
 
     args = parser.parse_args()
 
@@ -55,7 +55,9 @@ if __name__ == "__main__":
     elif args.mode == "dolly":
         mode = "argumentation-based"
         path = f"pipeline/{mode}/argumentation structure/dolly" 
-
+    elif args.mode == "sample":
+        mode = "argumentation-based"
+        path = f"pipeline/{mode}/argumentation structure/sample" 
 
     print(f"MODE {mode}")
     print("------------------------------------------------------------------------\n")
@@ -67,131 +69,107 @@ if __name__ == "__main__":
 
         print(f"{model_name} - START: {current_time.hour}:{current_time.minute}")
         print("------------------------------------------------------------------------\n")
-
-        for name in os.listdir(path):
-            if os.path.isdir(f"{path}/{name}"):
                 
-                df_train = pd.read_csv(f"{path}/{name}/train.csv").dropna()
-                df_val = pd.read_csv(f"{path}/{name}/validation.csv").dropna()
+        df_train = pd.read_csv(f"{path}/train.csv").dropna()
+        df_validation = pd.read_csv(f"{path}/validation.csv").dropna()
 
-                print(f"DATASET: {name}")
-                print("------------------------------------------------------------------------\n")
+        # df_train['label'] = df_train['label'].apply(lambda x: 'FAKE' if x == 0 else ('REAL' if x == 1 else x))
+        # df_validation['label'] = df_validation['label'].apply(lambda x: 'FAKE' if x == 0 else ('REAL' if x == 1 else x))
 
-                # 4 is random
-                df_train['label'] = df_train['label'].apply(lambda x: 'FAKE' if x == 0 else ('REAL' if x == 1 else x))
-                df_val['label'] = df_val['label'].apply(lambda x: 'FAKE' if x == 0 else ('REAL' if x == 1 else x))
+        train = Dataset.from_pandas(df_train).class_encode_column("label")
+        validation = Dataset.from_pandas(df_validation).class_encode_column("label")        
 
+        print(f"LOADING: {model_name}")
+        print("------------------------------------------------------------------------\n")
 
+        if model_name == "google/electra-base-discriminator":
+            tokenizer = ElectraTokenizer.from_pretrained(model_name, truncation=True, padding='max_length', max_length=512, return_tensors="pt")
+            model = ElectraForSequenceClassification.from_pretrained(f"{model_name}", num_labels=2, id2label={0: "FAKE", 1: "REAL"}, label2id={"FAKE": 0, "REAL": 1})
+        else:
+            tokenizer = AutoTokenizer.from_pretrained(model_name, truncation=True, padding='max_length', max_length=512, return_tensors="pt") 
+            model = AutoModelForSequenceClassification.from_pretrained(f"{model_name}", num_labels=2, id2label={0: "FAKE", 1: "REAL"}, label2id={"FAKE": 0, "REAL": 1})
+        
+        if torch.cuda.is_available():
+            model = model.to("cuda")
 
-                train = Dataset.from_pandas(df_train).class_encode_column("label")
-                validation = Dataset.from_pandas(df_val).class_encode_column("label")
+        # Tokenize data
+        tokenized_train = train.map(preprocess_function, batched=True)
+        tokenized_val = validation.map(preprocess_function, batched=True)
 
+        # Save predictions (for checking)
+        all_predictions = []
 
-                                
+        output_path = f"models/{mode}/{model_name}/training/"
 
-                print(f"LOADING: {model_name}")
-                print("------------------------------------------------------------------------\n")
+        if mode == 'argumentation-based':
+            output_path = f"models/{mode}/{args.mode}/{ELEMENT}/training/{model_name}"
 
-                try:
-                    files = os.listdir(f"models/{mode}/{model_name}/{name}")
-                    checkpoint_files = [f for f in files if f.startswith("checkpoint")]
-                    if checkpoint_files:
-                        sorted_checkpoint_files = sorted(checkpoint_files, key=lambda x: int(x.split("-")[1]), reverse=True)
-                        highest_checkpoint = sorted_checkpoint_files[0]
-                        model_path = f"models/{mode}/{model_name}/{name}/" + highest_checkpoint
-                    else:
-                        model_path = model_name
-                except FileNotFoundError:
-                    model_path = model_name
+        # Documentation: https://huggingface.co/transformers/v3.0.2/main_classes/trainer.html
+        training_args = TrainingArguments(
+            output_dir=output_path,  # Directory where model checkpoints and logs will be saved
+            per_device_train_batch_size=32,  # Batch size for training
+            evaluation_strategy="epoch",  # Evaluate the model after every epoch
+            logging_strategy="epoch",  # Log training data stats for loss after every epoch
+            learning_rate=4e-5,  # Learning rate for the optimizer
+            save_strategy="epoch",
+            optim="adamw_torch",
+            num_train_epochs=10,
+            #logging_dir=f"{output_path}/logs",  # Directory where training logs will be saved
+            report_to="none",
+            adam_epsilon=1e-8,  # Epsilon value for Adam optimizer
+            load_best_model_at_end=True,  # Load the best model at the end of training
+            metric_for_best_model="eval_loss",  # Metric to monitor for determining the best model
+            save_total_limit = 1
+        )
 
-                if model_name == "google/electra-base-discriminator":
-                    tokenizer = ElectraTokenizer.from_pretrained(model_name, truncation=True, padding='max_length', max_length=300, return_tensors="pt")
-                    model = ElectraForSequenceClassification.from_pretrained(f"{model_path}", num_labels=2, id2label={0: "FAKE", 1: "REAL"}, label2id={"FAKE": 0, "REAL": 1})
-                else:
-                    tokenizer = AutoTokenizer.from_pretrained(model_name, truncation=True, padding='max_length', max_length=300, return_tensors="pt") 
-                    model = AutoModelForSequenceClassification.from_pretrained(f"{model_path}", num_labels=2, id2label={0: "FAKE", 1: "REAL"}, label2id={"FAKE": 0, "REAL": 1})
-                if torch.cuda.is_available():
-                    model = model.to("cuda")
-      
-                # Tokenize data
-                tokenized_train = train.map(preprocess_function, batched=True)
-                tokenized_val = validation.map(preprocess_function, batched=True)
+        early_stop = EarlyStoppingCallback(1, 0) # Zero because delta
 
-                # Save predictions
-                all_predictions = []
+        class Classifier(Trainer):
+            def compute_loss(self, model, inputs, return_outputs=False):
+                labels = inputs.get("labels")
+                # Forward pass
+                outputs = model(**inputs)
+                logits = outputs.get("logits")
 
-                output_path = f"models/{mode}/{model_name}/training/{name}"
+                loss_fct = nn.CrossEntropyLoss()
+                loss = loss_fct(logits.view(-1, 2), labels.view(-1))
+                return (loss, outputs) if return_outputs else loss
 
-                if mode == 'argumentation-based':
-                    output_path = f"models/{mode}/{args.mode}/{specs}/training/{model_name}/{name}"
+        trainer = Classifier(
+            model=model,
+            args=training_args,
+            data_collator= DataCollatorWithPadding(tokenizer=tokenizer),
+            train_dataset=tokenized_train,
+            eval_dataset=tokenized_val,
+            compute_metrics=compute_metrics,
+            callbacks=[early_stop]
+            )
+        
+        #writer = SummaryWriter(log_dir=training_args.logging_dir)
 
+        print("START TRAINING")
+        print("------------------------------------------------------------------------\n")
 
-                # Documentation: https://huggingface.co/transformers/v3.0.2/main_classes/trainer.html
-                training_args = TrainingArguments(
-                    output_dir=output_path,  # Directory where model checkpoints and logs will be saved
-                    per_device_train_batch_size=32,  # Batch size for training
-                    evaluation_strategy="epoch",  # Evaluate the model after every epoch
-                    logging_strategy="epoch",  # Log training data stats for loss after every epoch
-                    learning_rate=4e-5,  # Learning rate for the optimizer
-                    save_strategy="epoch",
-                    optim="adamw_torch",
-                    num_train_epochs=10,
-                    #logging_dir=f"{output_path}/logs",  # Directory where training logs will be saved
-                    report_to="tensorboard",
-                    adam_epsilon=1e-8,  # Epsilon value for Adam optimizer
-                    load_best_model_at_end=True,  # Load the best model at the end of training
-                    metric_for_best_model="eval_loss",  # Metric to monitor for determining the best model
-                    save_total_limit = 1
-                )
-    
-                early_stop = EarlyStoppingCallback(1, 0) # Zero because delta
+        result = trainer.train()
+        print_summary(result)
 
-                class Classifier(Trainer):
-                    def compute_loss(self, model, inputs, return_outputs=False):
-                        labels = inputs.get("labels")
-                        # Forward pass
-                        outputs = model(**inputs)
-                        logits = outputs.get("logits")
+        final_model_output_path = f"models/{mode}/best/{model_name}/"
 
-                        loss_fct = nn.CrossEntropyLoss()
-                        loss = loss_fct(logits.view(-1, 2), labels.view(-1))
-                        return (loss, outputs) if return_outputs else loss
-
-                trainer = Classifier(
-                    model=model,
-                    args=training_args,
-                    data_collator= DataCollatorWithPadding(tokenizer=tokenizer),
-                    train_dataset=tokenized_train,
-                    eval_dataset=tokenized_val,
-                    compute_metrics=compute_metrics,
-                    callbacks=[early_stop]
-                    )
-                
-                #writer = SummaryWriter(log_dir=training_args.logging_dir)
-
-                print("START TRAINING")
-                print("------------------------------------------------------------------------\n")
-
-                result = trainer.train()
-                print_summary(result)
-
-                final_model_output_path = f"models/{mode}/best/{model_name}/{name}"
-
-                if mode == 'argumentation-based':
-                    final_model_output_path = f"models/{mode}/{args.mode}/{specs}/best/{model_name}/{name}"
+        if mode == 'argumentation-based':
+            final_model_output_path = f"models/{mode}/{args.mode}/{ELEMENT}/best/{model_name}/"
 
 
-                if not os.path.exists(final_model_output_path):
-                    os.makedirs(f"{final_model_output_path}")
+        if not os.path.exists(final_model_output_path):
+            os.makedirs(f"{final_model_output_path}")
 
-                trainer.save_model(f"{final_model_output_path}")
-                # trainer.evaluate()
-                # #writer.close()
+        trainer.save_model(f"{final_model_output_path}")
+        # trainer.evaluate()
+        # #writer.close()
 
 
-                # with open(f"{output_path}/predictions.txt", "w") as f:
-                #     for idx, pred in enumerate(all_predictions):
-                #         f.write(f"epoch {idx}: {pred}\n")
-                # print("------------------------------------------------------------------------\n")
-                # print()
+        # with open(f"{output_path}/predictions.txt", "w") as f:
+        #     for idx, pred in enumerate(all_predictions):
+        #         f.write(f"epoch {idx}: {pred}\n")
+        # print("------------------------------------------------------------------------\n")
+        # print()
 

@@ -5,8 +5,8 @@ import json
 import numpy as np
 import shutil
 
-DATASET = 'kaggle'
-TEMP_NAME = "temp_kaggle"
+DATASET = 'liar'
+TEMP_NAME = "temp_liar"
 BATCH_SIZE = 100
 
 path_to_data = "pipeline/argumentation-based/data"
@@ -176,10 +176,10 @@ if __name__ == "__main__":
             print(f"DATASET: {dataset} - LENGTH TRAIN: {len(df_train)} - LENGTH VALIDATION: {len(df_validation)} - LENGTH TEST: {len(df_test)}")
             print("------------------------------------------------------------------------\n")
 
-            # create_folders(dataset, "train")
-            # step, counter = 0, 0
-            # print(f"{dataset}: TRAIN")
-            # run(df_train, dataset, "train")
+            create_folders(dataset, "train")
+            step, counter = 0, 0
+            print(f"{dataset}: TRAIN")
+            run(df_train, dataset, "train")
 
             create_folders(dataset, "validation")
             step, counter = 0, 0

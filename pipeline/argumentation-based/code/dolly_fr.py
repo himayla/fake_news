@@ -11,9 +11,9 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from torch.utils.data import Dataset, DataLoader
 import re
 
-DATASET = "fake_real_1000"
-BATCH_SIZE = 100
-MAX_SECTION = 400
+DATASET = "fake_real"
+BATCH_SIZE = 10
+MAX_SECTION = 300
 
 class NewsDataset(Dataset):
     def __init__(self, data):
@@ -55,11 +55,6 @@ class NewsDataset(Dataset):
                 evidence_responses = generate_text(evidence_prompt)
                 claim_response = re.sub(r'\"\"\"', '"', claim_responses[0]["response"])
                 evidence_response = re.sub(r'\"\"\"', '"', evidence_responses[0]["response"])
-                # except RuntimeError:
-                #     print(section)
-                #     print(batch["ID"])
-                #     claim_response = "<unk>"
-                #     evidence_response = "<unk>"
             
                 section_claims.append(claim_response)
                 section_evidences.append(evidence_response)
@@ -137,7 +132,7 @@ if __name__ == "__main__":
             
             train = pd.read_csv(f"{dir}/data/{name}/train.csv").dropna()
             val = pd.read_csv(f"{dir}/data/{name}/validation.csv").dropna()
-            test = pd.read_csv(f"{dir}/data/{name}/test.csv").dropna()[:50]
+            test = pd.read_csv(f"{dir}/data/{name}/test.csv").dropna()
 
             print(f"LENGTH TRAIN: {len(train)} - LENGTH VAL: {len(val)} - LENGTH TEST {len(test)}")
             print("------------------------------------------------------------------------\n")
@@ -150,6 +145,6 @@ if __name__ == "__main__":
             if not os.path.exists(f"{p}/{name}"):
                 os.makedirs(f"{p}/{name}")
 
-            run(train, "train")
-            run(val, "validation")
+            # run(train, "train")
+            # run(val, "validation")
             run(test, "test")

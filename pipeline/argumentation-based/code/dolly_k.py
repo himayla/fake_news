@@ -11,7 +11,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from torch.utils.data import Dataset, DataLoader
 import re
 
-DATASET = "fake_real_1000"
+DATASET = "kaggle"
 BATCH_SIZE = 100
 MAX_SECTION = 400
 
@@ -150,6 +150,6 @@ if __name__ == "__main__":
             if not os.path.exists(f"{p}/{name}"):
                 os.makedirs(f"{p}/{name}")
 
-            run(train, "train")
+            # run(train, "train")
             run(val, "validation")
-            run(test, "test")
+            # run(test, "test")

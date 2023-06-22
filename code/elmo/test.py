@@ -70,9 +70,9 @@ json_output = defaultdict(dict)
 performance = {}
 path = f"pipeline/{MODE}/data"
 for dataset in os.listdir(path):
-    if os.path.isdir(f"{path}/{dataset}"):
+    if os.path.isdir(f"{path}/{dataset}") and dataset == 'fake_real_1000':
         # Load the fine-tuned model
-        path_to_model = f"models/{MODE}/elmo/{dataset}/pytorch_model.bin"
+        path_to_model = f"models/{MODE}/best/elmo/{dataset}/pytorch_model.bin"
 
         model = torch.load(path_to_model, map_location=torch.device('cpu'))
 

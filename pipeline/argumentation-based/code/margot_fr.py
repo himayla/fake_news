@@ -5,8 +5,8 @@ import json
 import numpy as np
 import shutil
 
-DATASET = 'kaggle'
-TEMP_NAME = "temp_kaggle"
+DATASET = 'fake_real'
+TEMP_NAME = "temp_fr_v"
 BATCH_SIZE = 100
 
 path_to_data = "pipeline/argumentation-based/data"
@@ -186,7 +186,7 @@ if __name__ == "__main__":
             print(f"{dataset}: VALIDATION")
             run(df_validation, dataset, "validation")
 
-            create_folders(dataset, "test")
-            print(f"{dataset}: TEST")
-            step, counter = 0, 0
-            run(df_test, dataset, "test")
+            # create_folders(dataset, "test")
+            # print(f"{dataset}: TEST")
+            # step, counter = 0, 0
+            # run(df_test, dataset, "test")

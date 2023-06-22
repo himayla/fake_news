@@ -147,12 +147,7 @@ class InstructionTextGenerationPipeline(Pipeline):
     def postprocess(self, model_outputs, response_key_token_id, end_key_token_id, return_full_text: bool = False):
 
         generated_sequence = model_outputs["generated_sequence"][0]
-        # print(type(generated_sequence), generated_sequence)
-        # generated_object = model_outputs["JSON OBJECT"][0]
 
-        #instruction_text = model_outputs["instruction_text"]
-
-        #generated_sequence: List[List[int]] = generated_sequence.numpy().tolist()
         generated_sequence: List[List[int]] = generated_sequence.numpy().tolist()
 
         records = []

@@ -15,7 +15,7 @@ def combine_batches(batches, name, replace=False) -> None:
 
 
     batched = []
-    for f in sorted_files[:2]:
+    for f in sorted_files:
         batched.append(pd.read_csv(f"{PATH}/{f}"))
 
     res = pd.concat(batched, ignore_index=True)
