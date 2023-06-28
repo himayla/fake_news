@@ -122,4 +122,4 @@ def load_kaggle(path):
 
 if __name__ == "__main__":
     load_data(original_dir="data", clean_dir="pipeline/text-based/data")
-    load_data(original_dir="data", clean_dir="pipeline/argumentation-based/data")
+    # load_data(original_dir="data", clean_dir="pipeline/argumentation-based/data")

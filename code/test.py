@@ -8,7 +8,7 @@ import json
 from datetime import datetime
 import torch
 
-ELEMENT = 'structure'
+ELEMENT = 'evidence'
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -19,7 +19,8 @@ def predict(row):
         tokenized_text = tokenizer(row["text"], truncation=True, return_tensors="pt")
     outputs = model(**tokenized_text.to(device))
     predicted_class = outputs.logits.argmax().item()
-    return predicted_class    
+
+    return predicted_class
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -29,8 +30,10 @@ if __name__ == "__main__":
 
     if args.mode == "text-based":
         mode = "text-based"
-        dir = f"pipeline/{mode}/data"
-    elif args.mode == "margot" or args.mode == "dolly" or args.mode == "sample":
+        path_to_data = f"pipeline/{mode}/argumentation structure" 
+        path_to_models = f"models/{mode}/{args.mode}/best"
+        path_to_results = f"pipeline/{mode}/results"
+    else:
         mode = "argumentation-based"
         path_to_data = f"pipeline/{mode}/argumentation structure/{args.mode}" 
         path_to_models = f"models/{mode}/{args.mode}/{ELEMENT}/best"
@@ -51,6 +54,7 @@ if __name__ == "__main__":
     
     performance = {}
     for model_name in os.listdir(path_to_models):
+        # Save predictions (for checking)
         current_time = datetime.now()
 
         print(f"{model_name} - START: {current_time.hour}:{current_time.minute}")
@@ -83,6 +87,9 @@ if __name__ == "__main__":
         # Make predictions on unlabeled data
         df_test["prediction"] = df_test.apply(lambda row: predict(row), axis=1)
 
+        # Write out
+        df_test.to_csv(f"{path_to_results}/{model_name}_predictions.csv")
+
         # Save output
         predictions = df_test["prediction"].values
 
@@ -90,9 +97,9 @@ if __name__ == "__main__":
 
         performance[model_name] = results
 
-    table = pd.DataFrame(performance)
+        table = pd.DataFrame(performance)
 
-    table.to_csv(f"{path_to_results}/csv/{model_name}_.csv", index_label=model_name)
+        table.to_csv(f"{path_to_results}/csv/{model_name}_.csv", index_label=model_name)
 
     with open(f"{path_to_results}/json/performance_test.json", 'w') as json_file:
         json.dump(performance, json_file, indent=4)

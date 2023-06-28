@@ -9,6 +9,7 @@ from nltk.stem.snowball import SnowballStemmer; nltk.download("punkt", quiet=Tru
 from nltk.tokenize import word_tokenize
 import re 
 import spacy # If error: python -m spacy download en_core_web_sm
+import pandas as pd
 
 # Load NLTK stopwords and Snowball stemmer
 stop_words = set(stopwords.words('english'))
@@ -73,7 +74,7 @@ def replace_match(match):
 
 def clean_text(raw_txt, mode):
 
-    replacements = load_replacements(f'{mode}/replacements.txt')
+    replacements = load_replacements(f'pipeline/{mode}/replacements.txt')
 
     if 'text-based' == mode:
         for pattern in replacements:
@@ -184,3 +185,13 @@ def clean_text(raw_txt, mode):
             clean_txt = clean_txt + '.'
 
     return clean_txt
+
+if __name__ == "__main__":
+
+    path = "pipeline/argumentation-based/argumentation structure/dolly"
+    res_path = 'pipeline/text-based/data'
+    for i in ['train', 'test', 'validation']:
+        print(i)
+        df = pd.read_csv(f"{path}/{i}.csv")
+        df.loc[:, 'text'] = df.apply(lambda x: clean_text(x["text"], 'text-based'), axis=1)
+        df.to_csv(f'pipeline/text-based/data/{i}.csv', columns=['text', 'label'], index_label='ID')

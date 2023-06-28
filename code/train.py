@@ -18,6 +18,8 @@ import torch.nn as nn
 all_models = ["bert-base-uncased", "roberta-base", "distilbert-base-uncased", "google/electra-base-discriminator"]
 ELEMENT = "structure"
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 def preprocess_function(news):
     if mode == "argumentation-based":
         return tokenizer(news[ELEMENT], truncation=True) ### Claim, or evidence, or structure
@@ -72,9 +74,6 @@ if __name__ == "__main__":
                 
         df_train = pd.read_csv(f"{path}/train.csv").dropna()
         df_validation = pd.read_csv(f"{path}/validation.csv").dropna()
-
-        # df_train['label'] = df_train['label'].apply(lambda x: 'FAKE' if x == 0 else ('REAL' if x == 1 else x))
-        # df_validation['label'] = df_validation['label'].apply(lambda x: 'FAKE' if x == 0 else ('REAL' if x == 1 else x))
 
         train = Dataset.from_pandas(df_train).class_encode_column("label")
         validation = Dataset.from_pandas(df_validation).class_encode_column("label")        
@@ -163,13 +162,3 @@ if __name__ == "__main__":
             os.makedirs(f"{final_model_output_path}")
 
         trainer.save_model(f"{final_model_output_path}")
-        # trainer.evaluate()
-        # #writer.close()
-
-
-        # with open(f"{output_path}/predictions.txt", "w") as f:
-        #     for idx, pred in enumerate(all_predictions):
-        #         f.write(f"epoch {idx}: {pred}\n")
-        # print("------------------------------------------------------------------------\n")
-        # print()
-

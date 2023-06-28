@@ -127,29 +127,47 @@ if __name__ == "__main__":
     model = AutoModelForCausalLM.from_pretrained("databricks/dolly-v2-12b", device_map="auto", torch_dtype=torch.bfloat16).to("cuda")
     generate_text = InstructionTextGenerationPipeline(model=model, tokenizer=tokenizer)
 
-    dir = f"pipeline/argumentation-based"
-    for name in os.listdir(f"{dir}/data"):
+    dolly_example = pd.DataFrame(
+        index=[0],
+        data={"text":"Honduras bans citizens from owning guns and has the highest homicide rate in the entire world. Switzerland, with a similar population, requires citizens to own guns and has the lowest homicide rate in the entire world. Barack Obama and Hillary Clinton are negotiating with the United Nations about doing a treaty that will ban the use of firearms.", "label": "FAKE"})
+    # example = HF_Dataset.from_pandas(dolly_example, preserve_index=True).class_encode_column("label")
 
-        step = 0
-        if name != ".DS_Store" and name == DATASET:
-            print(f"DATASET: {name}")
-            print("--------------------------------------------------------------------\n")
+    claim_prompt = f"Please state the main claim made by the author in the following section of a news article: {dolly_example['text']}"
+    evidence_prompt = f"Please state the main evidence provided by the author in the following section of a news article: {dolly_example['text']}"
+
+    print(claim_prompt)
+
+    # try:
+    claim_responses = generate_text(claim_prompt)
+    evidence_responses = generate_text(evidence_prompt)
+    claim_response = re.sub(r'\"\"\"', '"', claim_responses[0]["response"])
+    evidence_response = re.sub(r'\"\"\"', '"', evidence_responses[0]["response"])
+
+    print(claim_response)
+    print(evidence_response)
+# dir = f"pipeline/argumentation-based"
+    # for name in os.listdir(f"{dir}/data"):
+
+    #     step = 0
+    #     if name != ".DS_Store" and name == DATASET:
+    #         print(f"DATASET: {name}")
+    #         print("--------------------------------------------------------------------\n")
             
-            train = pd.read_csv(f"{dir}/data/{name}/train.csv").dropna()
-            val = pd.read_csv(f"{dir}/data/{name}/validation.csv").dropna()
-            test = pd.read_csv(f"{dir}/data/{name}/test.csv").dropna()[:50]
+    #         train = pd.read_csv(f"{dir}/data/{name}/train.csv").dropna()
+    #         val = pd.read_csv(f"{dir}/data/{name}/validation.csv").dropna()
+    #         test = pd.read_csv(f"{dir}/data/{name}/test.csv").dropna()[:50]
 
-            print(f"LENGTH TRAIN: {len(train)} - LENGTH VAL: {len(val)} - LENGTH TEST {len(test)}")
-            print("------------------------------------------------------------------------\n")
+    #         print(f"LENGTH TRAIN: {len(train)} - LENGTH VAL: {len(val)} - LENGTH TEST {len(test)}")
+    #         print("------------------------------------------------------------------------\n")
             
-            train = HF_Dataset.from_pandas(train, preserve_index=True).class_encode_column("label")
-            val = HF_Dataset.from_pandas(val, preserve_index=True).class_encode_column("label")
-            test = HF_Dataset.from_pandas(test, preserve_index=True).class_encode_column("label")
+    #         train = HF_Dataset.from_pandas(train, preserve_index=True).class_encode_column("label")
+    #         val = HF_Dataset.from_pandas(val, preserve_index=True).class_encode_column("label")
+    #         test = HF_Dataset.from_pandas(test, preserve_index=True).class_encode_column("label")
 
-            p = f"{dir}/argumentation structure/dolly"
-            if not os.path.exists(f"{p}/{name}"):
-                os.makedirs(f"{p}/{name}")
+    #         p = f"{dir}/argumentation structure/dolly"
+    #         if not os.path.exists(f"{p}/{name}"):
+    #             os.makedirs(f"{p}/{name}")
 
-            run(train, "train")
-            run(val, "validation")
-            run(test, "test")
+    #         run(train, "train")
+    #         run(val, "validation")
+    #         run(test, "test")
