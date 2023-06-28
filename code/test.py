@@ -8,7 +8,7 @@ import json
 from datetime import datetime
 import torch
 
-ELEMENT = 'evidence'
+ELEMENT = 'structure'
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -30,8 +30,8 @@ if __name__ == "__main__":
 
     if args.mode == "text-based":
         mode = "text-based"
-        path_to_data = f"pipeline/{mode}/argumentation structure" 
-        path_to_models = f"models/{mode}/{args.mode}/best"
+        path_to_data = f"pipeline/{mode}/data" 
+        path_to_models = f"models/{mode}/best"
         path_to_results = f"pipeline/{mode}/results"
     else:
         mode = "argumentation-based"
@@ -70,7 +70,7 @@ if __name__ == "__main__":
         
         model.to(device)
 
-        df_test = pd.read_csv(f"{path_to_data}/test.csv").dropna()
+        df_test = pd.read_csv(f"{path_to_data}/test.csv", index_col='ID').dropna()
 
         print(f"LENGTH: {len(df_test)}")
         print("------------------------------------------------------------------------")
@@ -88,7 +88,7 @@ if __name__ == "__main__":
         df_test["prediction"] = df_test.apply(lambda row: predict(row), axis=1)
 
         # Write out
-        df_test.to_csv(f"{path_to_results}/{model_name}_predictions.csv")
+        df_test.to_csv(f"{path_to_results}/{model_name}_predictions.csv", index_label='ID', columns=['prediction'])
 
         # Save output
         predictions = df_test["prediction"].values
@@ -99,7 +99,8 @@ if __name__ == "__main__":
 
         table = pd.DataFrame(performance)
 
-        table.to_csv(f"{path_to_results}/csv/{model_name}_.csv", index_label=model_name)
+        table.to_csv(f"{path_to_results}/csv/{model_name}_.csv", index_label='ID')
+
 
     with open(f"{path_to_results}/json/performance_test.json", 'w') as json_file:
         json.dump(performance, json_file, indent=4)

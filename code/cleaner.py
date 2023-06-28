@@ -192,6 +192,6 @@ if __name__ == "__main__":
     res_path = 'pipeline/text-based/data'
     for i in ['train', 'test', 'validation']:
         print(i)
-        df = pd.read_csv(f"{path}/{i}.csv")
+        df = pd.read_csv(f"{path}/{i}.csv", index_col='ID')
         df.loc[:, 'text'] = df.apply(lambda x: clean_text(x["text"], 'text-based'), axis=1)
         df.to_csv(f'pipeline/text-based/data/{i}.csv', columns=['text', 'label'], index_label='ID')

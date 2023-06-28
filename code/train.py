@@ -72,8 +72,8 @@ if __name__ == "__main__":
         print(f"{model_name} - START: {current_time.hour}:{current_time.minute}")
         print("------------------------------------------------------------------------\n")
                 
-        df_train = pd.read_csv(f"{path}/train.csv").dropna()
-        df_validation = pd.read_csv(f"{path}/validation.csv").dropna()
+        df_train = pd.read_csv(f"{path}/train.csv", index_col='ID').dropna()
+        df_validation = pd.read_csv(f"{path}/validation.csv", index_col='ID').dropna()
 
         train = Dataset.from_pandas(df_train).class_encode_column("label")
         validation = Dataset.from_pandas(df_validation).class_encode_column("label")        
