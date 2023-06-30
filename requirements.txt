@@ -1,0 +1,8 @@
+contextualSpellCheck==0.4.3
+nltk==3.8.1
+pandas==2.0.2
+pyenchant==3.2.2
+scikit_learn==1.2.2
+spacy==3.3.3
+transformers==4.30.2
+torch==1.13.1

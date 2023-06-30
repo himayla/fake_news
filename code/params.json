@@ -1,0 +1,35 @@
+{
+    "tokenizer": {
+        "truncation": true,
+        "padding": "max_length",
+        "max_length": 512,
+        "return_tensors": "pt"
+    },
+    "lm": {
+        "num_labels": 2,
+        "id2label": {
+            "0": "FAKE",
+            "1": "REAL"
+        },
+        "label2id": {
+            "FAKE": 0,
+            "REAL": 1
+        }
+    },
+    "model":
+    {
+        "per_device_train_batch_size": 32,
+        "evaluation_strategy": "epoch",
+        "logging_strategy": "epoch",
+        "learning_rate": 4e-5,
+        "save_strategy": "epoch",
+        "optim": "adamw_torch",
+        "num_train_epochs": 10,
+        "report_to": "none",
+        "adam_epsilon": 1e-8,
+        "load_best_model_at_end": true,
+        "metric_for_best_model": "eval_loss",
+        "save_total_limit": 1
+    }
+}
+
