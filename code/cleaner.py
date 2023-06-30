@@ -10,12 +10,13 @@ from nltk.tokenize import word_tokenize
 import re 
 import spacy # If error: python -m spacy download en_core_web_sm
 import pandas as pd
-
+from sklearn.model_selection import train_test_split
 # Load NLTK stopwords and Snowball stemmer
 stop_words = set(stopwords.words('english'))
 stemmer = SnowballStemmer("english")
 nlp = spacy.load('en_core_web_sm')
 contextualSpellCheck.add_to_pipe(nlp)
+import os
 
 # Load English dictionary
 dictionary = enchant.Broker().request_dict("en_US")
@@ -187,11 +188,16 @@ def clean_text(raw_txt, mode):
     return clean_txt
 
 if __name__ == "__main__":
+    clean_dir =  "FINAL/text-based"
+    df = pd.read_csv("data/FINAL/complete.csv")
+    df.loc[:, 'text'] = df.apply(lambda x: clean_text(x["text"], clean_dir), axis=1)
 
-    path = "pipeline/argumentation-based/argumentation structure/dolly"
-    res_path = 'pipeline/text-based/data'
-    for i in ['train', 'test', 'validation']:
-        print(i)
-        df = pd.read_csv(f"{path}/{i}.csv", index_col='ID')
-        df.loc[:, 'text'] = df.apply(lambda x: clean_text(x["text"], 'text-based'), axis=1)
-        df.to_csv(f'pipeline/text-based/data/{i}.csv', columns=['text', 'label'], index_label='ID')
+    train, validation = train_test_split(df, test_size=0.2)
+    validation, test = train_test_split(validation, test_size=0.25)
+
+    print(f"TRAIN - # FAKE: {len(train[train['label'] == 'FAKE'])} - # REAL:{len(train[train['label'] == 'REAL'])}")
+    print("------------------------------------------------------------------------")
+    
+    train.to_csv(f"{clean_dir}/train.csv", columns=["text", "label"], index_label="ID")
+    test.to_csv(f"{clean_dir}/test.csv",  columns=["text", "label"], index_label="ID")
+    validation.to_csv(f"{clean_dir}/validation.csv",  columns=["text", "label"], index_label="ID")

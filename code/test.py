@@ -11,7 +11,6 @@ import torch
 ELEMENT = 'structure'
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
 def predict(row):
     if mode.startswith("argumentation-based"):
         tokenized_text = tokenizer(row[ELEMENT], truncation=True, return_tensors="pt") ### Claim, or evidence, or structure
